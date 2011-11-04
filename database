@@ -1,0 +1,47 @@
+user:<user id> hash { username, email, password }
+CREATE user/signup
+READ   user/login
+UPDATE user/update
+DELETE 
+
+subscription:<subscription id> hash { url, link, title, description }
+CREATE subscription/subscribe
+READ   subscription/list
+UPDATE 
+DELETE subscription/unsubscribe
+
+item:<item id> hash { title, guid, link, description, comments, type }
+CREATE bot
+READ   item/list
+UPDATE bot
+DELETE 
+
+subscription:<subscription id>:items zset timestamp <item id>
+CREATE bot
+READ   item/list
+UPDATE 
+DELETE 
+
+user:<user id>:subscriptions set <subscription id>
+CREATE subscription/subscribe
+READ   bot
+UPDATE 
+DELETE subscription/unsubscribe
+
+subscription:<subscription id>:users set <user id>
+CREATE subscription/subscribe
+READ   bot
+UPDATE 
+DELETE subscription/unsubscribe
+
+user:<user id>:items zset timestamp <item id>
+CREATE bot
+READ   item/list
+UPDATE 
+DELETE 
+
+user:<user id>:unread set <item id>
+CREATE bot
+READ   item/list
+UPDATE item/unread
+DELETE item/read
