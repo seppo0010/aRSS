@@ -48,7 +48,7 @@ post '/user/signup' do
 	end
 	$user = User.new $r
 	u, message = $user.signup(params[:username], params[:password])
-	if (!user)
+	if (!$user)
 		halt(401, { :status => "error", :message => message }.send($output_method))
 	else
 		{ :status => "ok", :user => $user.to_hash }.send($output_method)

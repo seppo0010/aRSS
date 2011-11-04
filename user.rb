@@ -42,7 +42,7 @@ class User
 		@id = @r.incr 'user_id'
 		@username = username
 		@password = Digest::SHA1.hexdigest(Digest::SHA1.hexdigest(@username) + password);
-		@r.set 'user:' + username, @id
+		@r.hset 'user:username', username, @id
 		@r.hmset 'user:' + @id.to_s,
 			"password", @password,
 			"username", @username,
@@ -51,7 +51,7 @@ class User
 	end
 
 	def self.get(r, username, password)
-		id = r.get 'user:' + username
+		id = r.hget 'user:username', username
 		return nil, 'Invalid username or password' if !id
 		if r.hget('user:' + id.to_s, 'password') == Digest::SHA1.hexdigest(Digest::SHA1.hexdigest(username) + password);
 			return self.new r, r.hgetall('user:' + id.to_s)

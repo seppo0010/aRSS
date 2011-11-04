@@ -4,6 +4,6 @@ item/unread
 subscription/list
 subscription/subscribe
 subscription/unsubscribe
-user/login
-user/signup
+#user/login
+#user/signup
 user/update
