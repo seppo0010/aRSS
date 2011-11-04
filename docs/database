@@ -10,6 +10,12 @@ READ   user/login
 UPDATE user/update
 DELETE 
 
+subscription:url hash url => id
+CREATE subscription/subscribe
+READ   subscription/subscribe
+UPDATE 
+DELETE 
+
 subscription:<subscription id> hash { url, link, title, description }
 CREATE subscription/subscribe
 READ   subscription/list

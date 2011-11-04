@@ -25,53 +25,45 @@
 # those of the authors and should not be interpreted as representing official
 # policies, either expressed or implied, of Salvatore Sanfilippo.
 
-require 'digest/sha1'
-
-class User
-	attr_accessor :user_id
-	attr_accessor :username
-	attr_accessor :password
+class Subscription
+	attr_accessor :subscription_id
+	attr_accessor :url
+	attr_accessor :link
+	attr_accessor :title
+	attr_accessor :description
 
 	def initialize(redis, hash=nil)
 		@r = redis
 		if hash
-			@user_id = hash["user_id"]
-			@username = hash["username"]
-			@password = hash["password"]
+			@subscription_id = hash["subscription_id"]
+			@url = hash["url"]
+			@link = hash["link"]
+			@title = hash["title"]
+			@description = hash["description"]
 		end
 	end
 
-	def signup(username, password)
-		return nil, "Username already in use" if !@r.setnx('user:' + username, 0)
-		@user_id = @r.incr 'user_id'
-		@username = username
-		@password = Digest::SHA1.hexdigest(Digest::SHA1.hexdigest(@username) + password);
-		@r.hset 'user:username', username, @user_id
-		@r.hmset 'user:' + @user_id.to_s,
-			"password", @password,
-			"username", @username,
-			"user_id", @user_id
-		return self
-	end
+	def self.get_by_url(r, url)
+		return nil, "Invalid url" if !url.start_with? "http://" and !url.start_with? "https://"
+		subscription_id = r.hget 'subscription:url', url
+		return self.new r, subscription_id if subscription_id
 
-	def self.get(r, username, password)
-		user_id = r.hget 'user:username', username
-		return nil, 'Invalid username or password' if !user_id
-		if r.hget('user:' + user_id.to_s, 'password') == Digest::SHA1.hexdigest(Digest::SHA1.hexdigest(username) + password);
-			return self.new r, r.hgetall('user:' + user_id.to_s)
-		else
-			return nil, 'Invalid username or password'
-		end
+		# TODO: validate URL as a feed
+		subcription_id = r.incr 'subscription_id'
+		r.hset 'subscription:url', url, subcription_id
+		r.hmset 'subscription:' + subcription_id.to_s,
+			"subscription_id", subcription_id,
+			"url", url
+		return self.new r, { "subscription_id" => subcription_id, "url" => url }
 	end
 
 	def to_hash
-		{ :username => @username, :password => @password, :user_id => @user_id }
-	end
-
-	def subscribe(subscription)
-		return nil, "Invalid subscription" if !subscription
-		return nil, "Unexpected error" if !@user_id
-		@r.sadd 'user:' + @user_id.to_s + ':subscriptions', subscription.subscription_id.to_s
-		@r.sadd 'subscription:' + subscription.subscription_id.to_s + ':users', @user_id.to_s
+		{
+			:subscription_id => @subscription_id,
+			:url => @url,
+			:link => @link,
+			:title => @title,
+			:description => @description,
+		}
 	end
 end

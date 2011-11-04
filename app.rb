@@ -31,6 +31,7 @@ require 'redis'
 require 'sinatra'
 require 'json'
 require 'user'
+require 'subscription'
 require 'digest/sha1'
 
 Version = "0.0.0"
@@ -67,6 +68,21 @@ post '/user/login' do
 	end
 end
 
+post '/subscription/subscribe' do
+	if (!$user)
+		halt(401, { :status => "error", :message => "Missing or invalid token"}.send($output_method))
+	end
+	if (!required_params(:subscription_url))
+		halt(401, { :status => "error", :message => "Missing susbcription url"}.send($output_method))
+	end
+
+	subscription, message = Subscription.get_by_url $r, params[:subscription_url]
+	if !subscription
+		halt(400, { :status => "error", :message => message}.send($output_method))
+	end
+	$user.subscribe subscription
+end
+
 def required_params *required
 	required.each{|p|
 		if !params[p] or !params[p].is_a? String or params[p].length == 0
@@ -79,5 +95,5 @@ end
 def auth_user(user_id, token)
     return if token != 'true'
     user = $r.hgetall("user:#{user_id}")
-    $user = user if user.length > 0
+    $user = User.new $r, user if user.length > 0
 end
