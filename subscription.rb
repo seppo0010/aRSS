@@ -26,8 +26,10 @@
 # policies, either expressed or implied, of Salvatore Sanfilippo.
 
 require 'uri'
+require 'net/http'
 require 'simple-rss'
 require 'open-uri'
+require 'hpricot'
 
 class Subscription
 	attr_accessor :subscription_id
@@ -51,13 +53,24 @@ class Subscription
 		return self.new r, r.hgetall('subscription:' + subscription_id.to_s)
 	end
 
-	def self.get_by_url(r, url)
+	def self.get_by_url(r, url, max_redirects = 5)
+		p url
+		return nil, "Maximum redirections reached" if max_redirects == 0
 		return nil, "Invalid url" if !url.start_with? "http://" and !url.start_with? "https://"
 		subscription_id = r.hget 'subscription:url', url
 		return self.new r, r.hgetall('subscription:' + subscription_id.to_s) if subscription_id
 
 		begin
-			rss = SimpleRSS.parse open(url)
+			uri = URI(url)
+			response = Net::HTTP.get_response uri
+			case response
+				when Net::HTTPSuccess     then
+				when Net::HTTPRedirection then return self.get_by_url(r, response['location'], max_redirects - 1)
+			else
+				return nil, "Invalid URL"
+			end
+			body = response.body
+			rss = SimpleRSS.parse body
 			return nil, "Invalid URL" if !rss
 
 			subcription_id = r.incr 'subscription_id'
@@ -70,12 +83,29 @@ class Subscription
 			subscription.update_feed rss
 			return subscription
 		rescue
-			return nil, "Invalid URL"
+			begin
+				doc = Hpricot.parse(body)
+				(doc/:link).each do |link|
+					if link[:rel] == 'alternate' and link[:type] == 'application/rss+xml'
+						_uri = URI(link[:href])
+						_uri.scheme = uri.scheme if !_uri.scheme
+						_uri.host = uri.host if !_uri.host
+						_uri.port = uri.port if !_uri.port
+						_uri.path = uri.path if !_uri.path
+						_uri.query = uri.query if !_uri.query
+						_uri.fragment = uri.fragment if !_uri.fragment
+						return self.get_by_url r, _uri.to_s, max_redirects - 1 if _uri != uri
+					end
+				end
+				return nil, "Invalid URL"
+			rescue Exception => e
+				p e
+				return nil, "Invalid URL"
+			end
 		end
 	end
 
 	def update_feed rss=nil
-		# TODO: search RSS in homepage
 		rss = SimpleRSS.parse open(@url) if !rss
 		return nil, "Invalid URL" if !rss
 		@r.hmset 'subscription:' + @subscription_id.to_s,
