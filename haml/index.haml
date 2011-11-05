@@ -6,13 +6,21 @@
 	%script{ :type => 'text/javascript', :src => 'http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js' }
 	%script{ :type => 'text/javascript', :src => '/js/ejs_production.js' }
 	%script{ :type => 'text/javascript', :src => '/js/main.js' }
-%body
+%body#not_logged_in
 	-# haml does not allow %script with html
-	<script type="text/html" id="errormessage">
+	<script type="text/html" id="template_errormessage">
 	%div#notification{ :class => "alert-message error fade in", "data-alert" => 'alert' }
 		%a.close{:href => "#"}x
 		%p
 			<%= message %>
+	</script>
+	<script type="text/html" id="template_subscription_list">
+	%ul.unstyled
+		%li
+			%a{:href => "#subscription/all"} All items
+		<% for (var i=0; i< subscriptions.length; i++) {%>
+		%li <a href= "#subscription<%= subscriptions[i].subscription_id %>"><%= subscriptions[i].title %></a>
+		<% } %>
 	</script>
 	%div{ :class => "topbar" }
 		%div{ :class => "topbar-inner" }
@@ -49,6 +57,15 @@
 	%div{ :class => "container-fluid" }
 		%div{ :class => "sidebar" }
 			%section#subscriptions
-				%h3 Subscription
+				%div#add_subscription_box
+					%a.close{:href => "javascript:void(0);"} x
+					%p Paste a feed url
+					%input.large#new_subscription_url{ :type => "text" }
+					%button.btn.primary#confirm_subscription Add
+					%button.btn#cancel_subscription Cancel
+					%p
+						%em e.g.: googleblog.blogspot.com
+				%button.btn#add_subscription Add
+				%h3 Subscriptions
 				%div{ :id => "subscription_list" }
 		%div{ :class => "content" }

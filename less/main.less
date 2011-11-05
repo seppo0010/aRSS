@@ -28,30 +28,62 @@
  */
 
 
+.rounded-corners (@radius: 5px) {
+  border-radius: @radius;
+  -webkit-border-radius: @radius;
+  -moz-border-radius: @radius;
+}
+
 body#not_logged_in {
 	div.sidebar {
-		display: block;
+		display: none;
 	}
 	div.content#user {
-		display: block;
+		display: none;
 	}
 	div.content#visitor {
+		display: block;
+	}
+	#subscriptions {
 		display: none;
 	}
 }
 
 body#logged_in {
 	div.sidebar {
-		display: none;
+		display: block;
+		padding-top: 40px;
 	}
 	div.content#user {
-		display: none;
+		display: block;
+		padding-top: 40px;
 	}
 	div.content#visitor {
-		display: block;
+		display: none;
+		padding-top: 40px;
 	}
 	div.topbar ul.nav.secondary-nav {
 		display: none;
+	}
+	#subscriptions {
+		display: block;
+	}
+}
+
+body {
+	padding-top: 20px;
+}
+#subscriptions {
+	position: relative;
+	div#add_subscription_box {
+		.rounded-corners;
+		border: 1px solid black;
+		background: white;
+		position: absolute;
+		padding: 10px;
+		input {
+			margin-bottom: 4px;
+		}
 	}
 }
 

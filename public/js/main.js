@@ -20,6 +20,10 @@ function user_has_logged_out() {
 	$(document.body).attr('id', 'not_logged_in');
 }
 
+function refresh_subscriptions() {
+	$('#subscription_list').html(render('subscription_list', user))
+}
+
 function user_has_logged_in() {
 	$('a.menu').parent().removeClass('open');
 	if (user.user_id) {
@@ -30,6 +34,7 @@ function user_has_logged_in() {
 				try {
 					var json = $.parseJSON(data);
 					user.subscriptions = json
+					refresh_subscriptions();
 				} catch (e) {
 					show_message(UNEXPECTED_ERROR);
 				}
@@ -47,7 +52,7 @@ function user_has_logged_in() {
 }
 
 function render(template, variables) {
-	var t = new EJS({ text: document.getElementById(template).innerHTML })
+	var t = new EJS({ text: document.getElementById('template_' + template).innerHTML })
 	return t.render(variables);
 }
 
@@ -126,4 +131,43 @@ $(function() {
 		})
 		e.preventDefault();
 	})
+
+	$('#add_subscription_box').hide();
+	$('#add_subscription').click(function () {
+		$('#add_subscription_box').show();
+	})
+	$('#confirm_subscription').click(function() {
+		$('#new_subscription_url').attr('disabled', 'disabled');
+		$.ajax('/subscription/subscribe', {
+			'type': 'post',
+			'data': add_user_credentials({subscription_url: $('#new_subscription_url').val() }),
+			'success': function(data, textStatus, jqXHR) {
+				var json = $.parseJSON(data);
+				if (json) {
+					user.subscriptions.push(json);
+					refresh_subscriptions();
+				}
+				$('#new_subscription_url').val('');
+				$('#add_subscription_box').hide();
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				try {
+					var json = $.parseJSON(jqXHR.responseText);
+					show_message(json.message)
+				} catch (e) {
+					show_message(UNEXPECTED_ERROR)
+				}
+			},
+			complete: function() {
+				$('#new_subscription_url').attr('disabled', false);
+			}
+		})
+	});
+	$('#cancel_subscription').click(function() {
+		$('#add_subscription_box').hide();
+	});
+	$('#add_subscription_box .close').click(function(e) {
+		$('#add_subscription_box').hide();
+		e.preventDefault();
+	});
 });

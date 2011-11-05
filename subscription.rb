@@ -53,8 +53,7 @@ class Subscription
 		return self.new r, r.hgetall('subscription:' + subscription_id.to_s)
 	end
 
-	def self.get_by_url(r, url, max_redirects = 5)
-		p url
+	def self.get_by_url(r, url, max_redirects = 10)
 		return nil, "Maximum redirections reached" if max_redirects == 0
 		return nil, "Invalid url" if !url.start_with? "http://" and !url.start_with? "https://"
 		subscription_id = r.hget 'subscription:url', url
@@ -109,13 +108,18 @@ class Subscription
 	def update_feed rss=nil
 		rss = SimpleRSS.parse open(@url) if !rss
 		return nil, "Invalid URL" if !rss
+		description = ''
+		begin
+			description = rss.channel.description
+		rescue
+		end
 		@r.hmset 'subscription:' + @subscription_id.to_s,
 			"link", rss.channel.link,
 			"title", rss.channel.title,
-			"description", rss.channel.description
+			"description", description
 		@link = rss.channel.link
 		@title = rss.channel.title
-		@description = rss.channel.description
+		@description = description
 		add_items rss.items
         oldest = @r.zrange 'subscription:' + @subscription_id.to_s + ':items', 0, 0, { :withscores => true }
         timestamp = oldest.last.to_i
