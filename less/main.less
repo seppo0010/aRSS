@@ -47,6 +47,12 @@ body#not_logged_in {
 	#subscriptions {
 		display: none;
 	}
+	#logout_box {
+		display: none;
+	}
+	#login_register_box {
+		display: block;
+	}
 }
 
 body#logged_in {
@@ -62,7 +68,10 @@ body#logged_in {
 		display: none;
 		padding-top: 40px;
 	}
-	div.topbar ul.nav.secondary-nav {
+	#logout_box {
+		display: block;
+	}
+	#login_register_box {
 		display: none;
 	}
 	#subscriptions {

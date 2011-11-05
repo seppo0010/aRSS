@@ -13,7 +13,7 @@ function add_user_credentials(params) {
 	return params
 }
 
-function user_has_logged_out() {
+function user_logout() {
 	user.username = null;
 	user.user_id = null;
 	user.subscriptions = [];
@@ -68,15 +68,18 @@ $(function() {
 	$('.login').click(function() {
 		$('#register_box').hide();
 		$('#login_box').show();
+		$('#login_box').find('input:visible').first().focus();
 	})
 
 	$('.register').click(function() {
 		$('#register_box').show();
 		$('#login_box').hide();
+		$('#register_box').find('input:visible').first().focus();
 	})
 
 	$('a.menu').click(function(ev) {
 		$(ev.currentTarget).parent().toggleClass('open');
+		$(ev.currentTarget).parent().find('input:visible').first().focus();
 	})
 
 	$('#login_form').submit(function (e) {
@@ -87,6 +90,11 @@ $(function() {
 				'password': $('#password').val(),
 			},
 			'success': function(data, textStatus, jqXHR) {
+				$('#email').val('')
+				$('#password').val('')
+				$('#register_email').val('')
+				$('#register_password').val('')
+				$('#confirm_register_password').val('')
 				var json = $.parseJSON(data);
 				user.username = json.user.username;
 				user.user_id = json.user.user_id;
@@ -115,6 +123,11 @@ $(function() {
 				'password': $('#register_password').val(),
 			},
 			'success': function(data, textStatus, jqXHR) {
+				$('#email').val('')
+				$('#password').val('')
+				$('#register_email').val('')
+				$('#register_password').val('')
+				$('#confirm_register_password').val('')
 				var json = $.parseJSON(data);
 				user.username = json.user.username;
 				user.user_id = json.user.user_id;
@@ -170,4 +183,5 @@ $(function() {
 		$('#add_subscription_box').hide();
 		e.preventDefault();
 	});
+	$('#logout_box a').click(user_logout);
 });
