@@ -104,4 +104,9 @@ class User
 		}
 		return subscription
 	end
+
+	def subscriptions
+		return nil, "Unexpected error" if !@user_id
+		Subscription.list @r, @r.smembers('user:' + @user_id.to_s + ':subscriptions')
+	end
 end

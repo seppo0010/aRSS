@@ -3,7 +3,7 @@ item/read
 item/unread
 subscription/list
 #subscription/subscribe
-subscription/unsubscribe
+#subscription/unsubscribe
 #user/login
 #user/signup
 user/update

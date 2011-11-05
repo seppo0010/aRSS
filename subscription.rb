@@ -107,6 +107,14 @@ class Subscription
 			}
 	end
 
+	def self.list(r, ids)
+		r.multi {
+			ids.each {|s_id|
+				r.hgetall 'subscription:' + s_id.to_s
+			}
+		}
+	end
+
 	def to_hash
 		{
 			:subscription_id => @subscription_id,

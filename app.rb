@@ -115,6 +115,13 @@ post '/subscription/unsubscribe' do
 	output(subscription.to_hash)
 end
 
+get '/subscription/list' do
+	if (!$user)
+		halt(401, output({ :status => "error", :message => "Missing or invalid token"}))
+	end
+	output($user.subscriptions)
+end
+
 def required_params *required
 	required.each{|p|
 		if !params[p] or !params[p].is_a? String or params[p].length == 0
