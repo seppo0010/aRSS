@@ -121,7 +121,7 @@ class Subscription
         timestamp = oldest.last.to_i
         card = @r.zcard 'subscription:' + @subscription_id.to_s + ':items'
         now = Time.now.to_i
-        @r.zadd 'subscription:next_update', now + [(now - timestamp) / card, 600].max, @subscription_id
+        @r.zadd 'subscription:next_update', now + [(now - timestamp) / card, 60].max, @subscription_id
 		return self
 	end
 
