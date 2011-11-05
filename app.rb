@@ -36,49 +36,53 @@ require 'digest/sha1'
 
 Version = "0.0.0"
 
+def output obj
+    return obj if obj.is_a? String
+    return obj.to_json
+end
+
 before do
     $r = Redis.new(:host => RedisHost, :port => RedisPort) if !$r
     $user = nil
     auth_user(request.params['user_id'], request.params['token'])
-	$output_method = :to_json
 end
 
 post '/user/signup' do
 	if (!required_params(:username, :password))
-		halt(401, { :status => "error", :message => "Missing username or password"}.send($output_method))
+		halt(401, output({ :status => "error", :message => "Missing username or password"}))
 	end
 	$user = User.new $r
 	u, message = $user.signup(params[:username], params[:password])
-	if (!$user)
-		halt(401, { :status => "error", :message => message }.send($output_method))
+	if (!u)
+		halt(401, output({ :status => "error", :message => message }))
 	else
-		{ :status => "ok", :user => $user.to_hash }.send($output_method)
+		output({ :status => "ok", :user => $user.to_hash })
 	end
 end
 
 post '/user/login' do
 	if (!required_params(:username, :password))
-		halt(401, { :status => "error", :message => "Missing username or password"}.send($output_method))
+		halt(401, output({ :status => "error", :message => "Missing username or password"}))
 	end
 	$user, message = User.get($r, params[:username], params[:password])
 	if (!$user)
-		halt(401, { :status => "error", :message => message }.send($output_method))
+		halt(401, output({ :status => "error", :message => message }))
 	else
-		{ :status => "ok", :user => $user.to_hash }.send($output_method)
+		output({ :status => "ok", :user => $user.to_hash })
 	end
 end
 
 post '/subscription/subscribe' do
 	if (!$user)
-		halt(401, { :status => "error", :message => "Missing or invalid token"}.send($output_method))
+		halt(401, output({ :status => "error", :message => "Missing or invalid token"}))
 	end
 	if (!required_params(:subscription_url))
-		halt(401, { :status => "error", :message => "Missing susbcription url"}.send($output_method))
+		halt(401, output({ :status => "error", :message => "Missing susbcription url"}))
 	end
 
 	subscription, message = Subscription.get_by_url $r, params[:subscription_url]
 	if !subscription
-		halt(400, { :status => "error", :message => message}.send($output_method))
+		halt(400, output({ :status => "error", :message => message}))
 	end
 	$user.subscribe subscription
 end
