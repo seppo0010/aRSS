@@ -30,7 +30,6 @@ function user_has_logged_in() {
 				try {
 					var json = $.parseJSON(data);
 					user.subscriptions = json
-					console.log(json);
 				} catch (e) {
 					show_message(UNEXPECTED_ERROR);
 				}
