@@ -109,4 +109,13 @@ class User
 		return nil, "Unexpected error" if !@user_id
 		Subscription.list @r, @r.smembers('user:' + @user_id.to_s + ':subscriptions')
 	end
+
+	def items start, stop
+		items = @r.zrevrange 'user:' + @user_id.to_s + ':items', start, stop
+		@r.multi {
+			items.each {|item|
+				@r.hgetall 'item:' + item.to_s
+			}
+		}
+	end
 end

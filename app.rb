@@ -122,6 +122,13 @@ get '/subscription/list' do
 	output($user.subscriptions)
 end
 
+get '/items/list' do
+	if (!$user)
+		halt(401, output({ :status => "error", :message => "Missing or invalid token"}))
+	end
+	output($user.items params[:start].to_i, params[:stop] || 20)
+end
+
 def required_params *required
 	required.each{|p|
 		if !params[p] or !params[p].is_a? String or params[p].length == 0
