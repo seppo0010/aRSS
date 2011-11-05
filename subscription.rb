@@ -62,8 +62,9 @@ class Subscription
                 "subscription_id", subcription_id,
                 "url", url
 
-            subscription self.new r, { "subscription_id" => subcription_id, "url" => url }
+            subscription = self.new r, { "subscription_id" => subcription_id, "url" => url }
             subscription.add_items rss.items
+            return subscription
         rescue
             return nil, "Invalid URL"
         end
@@ -87,13 +88,16 @@ class Subscription
 		items.each {|item|
 			item_id = @r.hget 'item:guid', item.guid || (item.link + item.title)
 			item_id = @r.incr 'item_id' if !item_id
+            date = (item.pubDate || Time.now).to_i
+            @r.zadd 'subscription:' + @subscription_id.to_s + ':items', date, item_id.to_s
 			@r.hset 'item:guid', item.guid || (item.link + item.title), item_id.to_s 
 			@r.hmset 'item:' + item_id.to_s,
 				"title", item.title,
 				"link", item.link,
 				"guid", item.guid,
 				"description", item.description,
-				"comments", item.comments
+				"comments", item.comments,
+				"timestamp", date.to_s
 			}
     end
 
