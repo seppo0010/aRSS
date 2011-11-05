@@ -129,6 +129,16 @@ get '/items/list' do
 	output($user.items params[:start].to_i, params[:stop] || 20)
 end
 
+post '/items/mark' do
+	if (!$user)
+		halt(401, output({ :status => "error", :message => "Missing or invalid token"}))
+	end
+	if (!params[:item_id])
+		halt(401, output({ :status => "error", :message => "Missing or invalid item_id"}))
+	end
+	output($user.mark_as_read(params[:read], params[:item_id]))
+end
+
 def required_params *required
 	required.each{|p|
 		if !params[p] or !params[p].is_a? String or params[p].length == 0
