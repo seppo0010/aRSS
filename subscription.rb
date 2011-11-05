@@ -63,16 +63,16 @@ class Subscription
                 "url", url
 
             subscription = self.new r, { "subscription_id" => subcription_id, "url" => url }
-            subscription.add_items rss.items
+            subscription.update_feed rss
             return subscription
         rescue
             return nil, "Invalid URL"
         end
 	end
 
-    def update_feed
+    def update_feed rss=nil
 		# TODO: search RSS in homepage
-		rss = SimpleRSS.parse open(@url)
+		rss = SimpleRSS.parse open(@url) if !rss
 		return nil, "Invalid URL" if !rss
 		@r.hmset 'subscription:' + @subscription_id.to_s,
 			"link", rss.channel.link,
@@ -82,6 +82,7 @@ class Subscription
 		@title = rss.channel.title
 		@description = rss.channel.description
 		add_items rss.items
+        return self
     end
 
     def add_items items

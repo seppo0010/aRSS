@@ -74,10 +74,13 @@ class User
 		@r.sadd 'user:' + @user_id.to_s + ':subscriptions', subscription.subscription_id.to_s
 		@r.sadd 'subscription:' + subscription.subscription_id.to_s + ':users', @user_id.to_s
         items = @r.zrevrange 'subscription:' + subscription.subscription_id.to_s + ':items', 0, 20
-        items.each { |item|
-            timestamp = @r.hget 'item:' + item.to_s, 'timestamp'
-            @r.zadd 'user:' + @user_id.to_s + ':items', timestamp.to_i, item
-            @r.zadd 'user:' + @user_id.to_s + ':unread', timestamp.to_i, item
+        @r.multi {
+            items.each { |item|
+                timestamp = @r.hget 'item:' + item.to_s, 'timestamp'
+                @r.zadd 'user:' + @user_id.to_s + ':items', timestamp.to_i, item
+                @r.zadd 'user:' + @user_id.to_s + ':unread', timestamp.to_i, item
+            }
         }
+        return subscription
 	end
 end

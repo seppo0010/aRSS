@@ -84,7 +84,11 @@ post '/subscription/subscribe' do
 	if !subscription
 		halt(400, output({ :status => "error", :message => message}))
 	end
-	$user.subscribe subscription
+	subscription, message = $user.subscribe subscription
+	if !subscription
+		halt(400, output({ :status => "error", :message => message}))
+	end
+    output(subscription.to_hash)
 end
 
 def required_params *required
