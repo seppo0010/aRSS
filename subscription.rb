@@ -138,8 +138,7 @@ class Subscription
 				"guid", item.guid,
 				"description", item.description,
 				"comments", item.comments,
-				"timestamp", date.to_s,
-				"last_update", Time.now.to_i
+				"timestamp", date.to_s
 			}
 	end
 
@@ -158,6 +157,12 @@ class Subscription
 			:link => @link,
 			:title => @title,
 			:description => @description,
+		}
+	end
+
+	def self.update_scheduled r
+		r.zrangebyscore('subscription:next_update', '-inf', Time.now.to_i).each { |subscription_id|
+			self.get_by_id(r, subscription_id).update_feed
 		}
 	end
 end
