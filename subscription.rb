@@ -25,6 +25,10 @@
 # those of the authors and should not be interpreted as representing official
 # policies, either expressed or implied, of Salvatore Sanfilippo.
 
+require 'uri'
+require 'simple-rss'
+require 'open-uri'
+
 class Subscription
 	attr_accessor :subscription_id
 	attr_accessor :url
@@ -46,16 +50,52 @@ class Subscription
 	def self.get_by_url(r, url)
 		return nil, "Invalid url" if !url.start_with? "http://" and !url.start_with? "https://"
 		subscription_id = r.hget 'subscription:url', url
-		return self.new r, subscription_id if subscription_id
+		return self.new r, r.hgetall('subscription:' + subscription_id.to_s) if subscription_id
 
-		# TODO: validate URL as a feed
-		subcription_id = r.incr 'subscription_id'
-		r.hset 'subscription:url', url, subcription_id
-		r.hmset 'subscription:' + subcription_id.to_s,
-			"subscription_id", subcription_id,
-			"url", url
-		return self.new r, { "subscription_id" => subcription_id, "url" => url }
+        begin
+            rss = SimpleRSS.parse open(url)
+            return nil, "Invalid URL" if !rss
+
+            subcription_id = r.incr 'subscription_id'
+            r.hset 'subscription:url', url, subcription_id
+            r.hmset 'subscription:' + subcription_id.to_s,
+                "subscription_id", subcription_id,
+                "url", url
+
+            subscription self.new r, { "subscription_id" => subcription_id, "url" => url }
+            subscription.add_items rss.items
+        rescue
+            return nil, "Invalid URL"
+        end
 	end
+
+    def update_feed
+		# TODO: search RSS in homepage
+		rss = SimpleRSS.parse open(@url)
+		return nil, "Invalid URL" if !rss
+		@r.hmset 'subscription:' + @subscription_id.to_s,
+			"link", rss.channel.link,
+			"title", rss.channel.title,
+			"description", rss.channel.description
+		@link = rss.channel.link
+		@title = rss.channel.title
+		@description = rss.channel.description
+		add_items rss.items
+    end
+
+    def add_items items
+		items.each {|item|
+			item_id = @r.hget 'item:guid', item.guid || (item.link + item.title)
+			item_id = @r.incr 'item_id' if !item_id
+			@r.hset 'item:guid', item.guid || (item.link + item.title), item_id.to_s 
+			@r.hmset 'item:' + item_id.to_s,
+				"title", item.title,
+				"link", item.link,
+				"guid", item.guid,
+				"description", item.description,
+				"comments", item.comments
+			}
+    end
 
 	def to_hash
 		{
