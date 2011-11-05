@@ -135,6 +135,7 @@ $(function() {
 	$('#add_subscription_box').hide();
 	$('#add_subscription').click(function () {
 		$('#add_subscription_box').show();
+		$('#new_subscription_url').val('http://');
 	})
 	$('#confirm_subscription').click(function() {
 		$('#new_subscription_url').attr('disabled', 'disabled');
@@ -147,7 +148,6 @@ $(function() {
 					user.subscriptions.push(json);
 					refresh_subscriptions();
 				}
-				$('#new_subscription_url').val('');
 				$('#add_subscription_box').hide();
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
