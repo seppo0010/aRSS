@@ -2,7 +2,7 @@ item/list
 item/read
 item/unread
 subscription/list
-subscription/subscribe
+#subscription/subscribe
 subscription/unsubscribe
 #user/login
 #user/signup

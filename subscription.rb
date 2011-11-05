@@ -47,30 +47,34 @@ class Subscription
 		end
 	end
 
+	def self.get_by_id(r, subscription_id)
+		return self.new r, r.hgetall('subscription:' + subscription_id.to_s)
+	end
+
 	def self.get_by_url(r, url)
 		return nil, "Invalid url" if !url.start_with? "http://" and !url.start_with? "https://"
 		subscription_id = r.hget 'subscription:url', url
 		return self.new r, r.hgetall('subscription:' + subscription_id.to_s) if subscription_id
 
-        begin
-            rss = SimpleRSS.parse open(url)
-            return nil, "Invalid URL" if !rss
+		begin
+			rss = SimpleRSS.parse open(url)
+			return nil, "Invalid URL" if !rss
 
-            subcription_id = r.incr 'subscription_id'
-            r.hset 'subscription:url', url, subcription_id
-            r.hmset 'subscription:' + subcription_id.to_s,
-                "subscription_id", subcription_id,
-                "url", url
+			subcription_id = r.incr 'subscription_id'
+			r.hset 'subscription:url', url, subcription_id
+			r.hmset 'subscription:' + subcription_id.to_s,
+			"subscription_id", subcription_id,
+			"url", url
 
-            subscription = self.new r, { "subscription_id" => subcription_id, "url" => url }
-            subscription.update_feed rss
-            return subscription
-        rescue
-            return nil, "Invalid URL"
-        end
+			subscription = self.new r, { "subscription_id" => subcription_id, "url" => url }
+			subscription.update_feed rss
+			return subscription
+		rescue
+			return nil, "Invalid URL"
+		end
 	end
 
-    def update_feed rss=nil
+	def update_feed rss=nil
 		# TODO: search RSS in homepage
 		rss = SimpleRSS.parse open(@url) if !rss
 		return nil, "Invalid URL" if !rss
@@ -82,15 +86,15 @@ class Subscription
 		@title = rss.channel.title
 		@description = rss.channel.description
 		add_items rss.items
-        return self
-    end
+		return self
+	end
 
-    def add_items items
+	def add_items items
 		items.each {|item|
 			item_id = @r.hget 'item:guid', item.guid || (item.link + item.title)
 			item_id = @r.incr 'item_id' if !item_id
-            date = (item.pubDate || Time.now).to_i
-            @r.zadd 'subscription:' + @subscription_id.to_s + ':items', date, item_id.to_s
+			date = (item.pubDate || Time.now).to_i
+			@r.zadd 'subscription:' + @subscription_id.to_s + ':items', date, item_id.to_s
 			@r.hset 'item:guid', item.guid || (item.link + item.title), item_id.to_s 
 			@r.hmset 'item:' + item_id.to_s,
 				"title", item.title,
@@ -98,9 +102,10 @@ class Subscription
 				"guid", item.guid,
 				"description", item.description,
 				"comments", item.comments,
-				"timestamp", date.to_s
+				"timestamp", date.to_s,
+				"last_update", Time.now.to_i
 			}
-    end
+	end
 
 	def to_hash
 		{

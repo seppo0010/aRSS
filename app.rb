@@ -37,14 +37,14 @@ require 'digest/sha1'
 Version = "0.0.0"
 
 def output obj
-    return obj if obj.is_a? String
-    return obj.to_json
+	return obj if obj.is_a? String
+	return obj.to_json
 end
 
 before do
-    $r = Redis.new(:host => RedisHost, :port => RedisPort) if !$r
-    $user = nil
-    auth_user(request.params['user_id'], request.params['token'])
+	$r = Redis.new(:host => RedisHost, :port => RedisPort) if !$r
+	$user = nil
+	auth_user(request.params['user_id'], request.params['token'])
 end
 
 post '/user/signup' do
@@ -77,7 +77,7 @@ post '/subscription/subscribe' do
 		halt(401, output({ :status => "error", :message => "Missing or invalid token"}))
 	end
 	if (!required_params(:subscription_url))
-		halt(401, output({ :status => "error", :message => "Missing susbcription url"}))
+		halt(401, output({ :status => "error", :message => "Missing subscription url"}))
 	end
 
 	subscription, message = Subscription.get_by_url $r, params[:subscription_url]
@@ -88,7 +88,31 @@ post '/subscription/subscribe' do
 	if !subscription
 		halt(400, output({ :status => "error", :message => message}))
 	end
-    output(subscription.to_hash)
+	output(subscription.to_hash)
+end
+
+post '/subscription/unsubscribe' do
+	if (!$user)
+		halt(401, output({ :status => "error", :message => "Missing or invalid token"}))
+	end
+	if (!required_params(:subscription_url) and !required_params(:subscription_id))
+		halt(401, output({ :status => "error", :message => "Missing subscription"}))
+	end
+
+	if params[:subscription_url]
+		subscription, message = Subscription.get_by_url $r, params[:subscription_url]
+	elsif params[:subscription_id]
+		subscription, message = Subscription.get_by_id $r, params[:subscription_id]
+	end
+
+	if !subscription
+		halt(400, output({ :status => "error", :message => message}))
+	end
+	subscription, message = $user.unsubscribe subscription
+	if !subscription
+		halt(400, output({ :status => "error", :message => message}))
+	end
+	output(subscription.to_hash)
 end
 
 def required_params *required
@@ -101,7 +125,7 @@ def required_params *required
 end
 
 def auth_user(user_id, token)
-    return if token != 'true'
-    user = $r.hgetall("user:#{user_id}")
-    $user = User.new $r, user if user.length > 0
+	return if token != 'true'
+	user = $r.hgetall("user:#{user_id}")
+	$user = User.new $r, user if user.length > 0
 end
