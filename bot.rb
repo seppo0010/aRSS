@@ -31,4 +31,7 @@ require 'redis'
 require 'subscription'
 
 $r = Redis.new(:host => RedisHost, :port => RedisPort)
-Subscription.update_scheduled $r
+while 1
+	n = Subscription.update_scheduled $r
+	sleep(n - Time.now.to_i)
+end

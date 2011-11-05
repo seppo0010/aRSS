@@ -117,11 +117,11 @@ class Subscription
 		@title = rss.channel.title
 		@description = rss.channel.description
 		add_items rss.items
-        oldest = @r.zrange 'subscription:' + @subscription_id.to_s + ':items', 0, 0, 'withscores'
-        timestamp = @r.zscore('subscription:' + @subscription_id.to_s + ':items', oldest.first).to_i
+        oldest = @r.zrange 'subscription:' + @subscription_id.to_s + ':items', 0, 0, { :withscores => true }
+        timestamp = oldest.last.to_i
         card = @r.zcard 'subscription:' + @subscription_id.to_s + ':items'
         now = Time.now.to_i
-        @r.zadd 'subscription:next_update', [now + ((now - timestamp) / card), 600].max, @subscription_id
+        @r.zadd 'subscription:next_update', now + [(now - timestamp) / card, 600].max, @subscription_id
 		return self
 	end
 
@@ -164,5 +164,7 @@ class Subscription
 		r.zrangebyscore('subscription:next_update', '-inf', Time.now.to_i).each { |subscription_id|
 			self.get_by_id(r, subscription_id).update_feed
 		}
+        oldest = r.zrange 'subscription:next_update', 0, 0, { :withscores => true }
+        return oldest.last.to_i
 	end
 end
