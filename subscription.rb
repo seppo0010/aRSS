@@ -86,7 +86,7 @@ class Subscription
 			begin
 				doc = Hpricot.parse(body)
 				(doc/:link).each do |link|
-					if link[:rel] == 'alternate' and link[:type] == 'application/rss+xml'
+					if link[:rel] == 'alternate' and (link[:type] == 'application/rss+xml' or link[:type] == 'application/atom+xml')
 						_uri = URI(link[:href])
 						_uri.scheme = uri.scheme if !_uri.scheme
 						_uri.host = uri.host if !_uri.host
