@@ -1,7 +1,7 @@
-item/list
+#item/list
 item/read
 item/unread
-subscription/list
+#subscription/list
 #subscription/subscribe
 #subscription/unsubscribe
 #user/login
