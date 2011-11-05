@@ -47,6 +47,10 @@ before do
 	auth_user(request.params['user_id'], request.params['token'])
 end
 
+get '/' do
+	redirect('/html/index.html')
+end
+
 post '/user/signup' do
 	if (!required_params(:username, :password))
 		halt(401, output({ :status => "error", :message => "Missing username or password"}))

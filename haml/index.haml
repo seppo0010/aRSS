@@ -1,0 +1,54 @@
+!!!
+%head
+	%meta{ :content => 'text/html;charset=UTF-8', :http => { :equiv => "content-type" } }/
+	%link{ :href => '/css/bootstrap.min.css', :rel => 'stylesheet', :type => 'text/css' }/
+	%link{ :href => '/css/main.css', :rel => 'stylesheet', :type => 'text/css' }/
+	%script{ :type => 'text/javascript', :src => 'http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js' }
+	%script{ :type => 'text/javascript', :src => '/js/ejs_production.js' }
+	%script{ :type => 'text/javascript', :src => '/js/main.js' }
+%body
+	-# haml does not allow %script with html
+	<script type="text/html" id="errormessage">
+	%div#notification{ :class => "alert-message error fade in", "data-alert" => 'alert' }
+		%a.close{:href => "#"}x
+		%p
+			<%= message %>
+	</script>
+	%div{ :class => "topbar" }
+		%div{ :class => "topbar-inner" }
+			%div{ :class => "container" }
+				%a{ :class => "brand", :href => '/' } aRSS Reader
+				%ul{:class => "nav secondary-nav"}
+					%li{:class => "menu", :id => "login_register_box"}
+						%a{ :href => "javascript:void(null);", "class" => "menu" } Login
+						%ul{ :class => "menu-dropdown" }
+							%li
+								#register_box{:style => "display:none"}
+									%form#register_form{:action => "#", :method => "post"}
+										%label{:for => "register_email"} Email
+										%input#register_email{:name => "register_email", :type => "text"}/
+										%br/
+										%label{:for => "register_password"} Password
+										%input#register_password{:name => "register_password", :type => "password"}/
+										%br/
+										%label{:for => "confirm_register_password"} Repeat Password
+										%input#confirm_register_password{:name => "confirm_register_password", :type => "password"}/
+										%br/
+										%input.button{:name => "submit", :type => "submit", :value => "Sign up"}/
+									%a.login{:href => "javascript:void(0);"} Login
+								#login_box
+									%form#login_form{:action => "#", :method => "post"}
+										%label{:for => "email"} Email
+										%input#email{:name => "email", :type => "text"}/
+										%br/
+										%label{:for => "password"} Password
+										%input#password{:name => "password", :type => "password"}/
+										%br/
+										%input.button{:name => "submit", :type => "submit", :value => "Login"}/
+									%a.register{:href => "javascript:void(0);"} Sign up
+	%div{ :class => "container-fluid" }
+		%div{ :class => "sidebar" }
+			%section#subscriptions
+				%h3 Subscription
+				%div{ :id => "subscription_list" }
+		%div{ :class => "content" }
