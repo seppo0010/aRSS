@@ -22,7 +22,13 @@ READ   subscription/list
 UPDATE 
 DELETE subscription/unsubscribe
 
-item:<item id> hash { title, guid, link, description, comments, type }
+item:guid hash guid => item id
+CREATE bot
+READ   bot
+UPDATE 
+DELETE 
+
+item:<item id> hash { title, guid, link, description, comments }
 CREATE bot
 READ   item/list
 UPDATE bot
@@ -47,13 +53,19 @@ UPDATE
 DELETE subscription/unsubscribe
 
 user:<user id>:items zset timestamp <item id>
-CREATE bot
+CREATE bot, subscription/subscribe
 READ   item/list
 UPDATE 
 DELETE 
 
-user:<user id>:unread set <item id>
-CREATE bot
+user:<user id>:unread zset timestamp <item id>
+CREATE bot, subscription/subscribe
 READ   item/list
 UPDATE item/unread
 DELETE item/read
+
+user:<user id>:read zset read-timestamp <item id>
+CREATE item/read
+READ   item/list
+UPDATE 
+DELETE item/unread
