@@ -143,11 +143,20 @@ class Subscription
 	end
 
 	def self.list(r, ids)
-		r.multi {
+		multi = r.multi {
 			ids.each {|s_id|
 				r.hgetall 'subscription:' + s_id.to_s
 			}
 		}
+		subscriptions = []
+		multi.each {|s|
+			subscription = {}
+			(s.count / 2).times {|t|
+				subscription[s[t * 2]] = s[t * 2 + 1]
+			}
+			subscriptions.push(subscription)
+		}
+		return subscriptions
 	end
 
 	def to_hash
