@@ -42,6 +42,7 @@ body#not_logged_in {
 		display: none;
 	}
 	div.content#visitor {
+		padding-top: 20px;
 		display: block;
 	}
 	#subscriptions {
@@ -58,15 +59,30 @@ body#not_logged_in {
 body#logged_in {
 	div.sidebar {
 		display: block;
-		padding-top: 40px;
+		padding-top: 20px;
 	}
 	div.content#user {
 		display: block;
-		padding-top: 40px;
+		padding-top: 20px;
+		li .active {
+			h3 a {
+				color: #0069D6;
+			}
+			div {
+				display: block;
+			}
+		}
+		li {
+			h3 a {
+				color: #333;
+			}
+			div {
+				display: none;
+			}
+		}
 	}
 	div.content#visitor {
 		display: none;
-		padding-top: 40px;
 	}
 	#logout_box {
 		display: block;
@@ -80,7 +96,7 @@ body#logged_in {
 }
 
 body {
-	padding-top: 20px;
+	padding-top: 40px;
 }
 #subscriptions {
 	position: relative;

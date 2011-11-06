@@ -297,3 +297,50 @@ $(function() {
 	});
 	$('#logout_box a').click(user_logout);
 });
+
+    $(function() {
+        $(document).keypress(function(e) {
+            if ($(':focus').length > 0) return;
+            if (e.which == 63) { // for some reason in keyup the '?' is returning 0, along with other keys
+                $('#keyboard-help').show();
+            }
+        });
+        $(document).keyup(function(e) {
+            if ($(':focus').length > 0) return;
+            var active = $('article.active');
+            if (e.which == 74 || e.which == 75) {
+                var newActive;
+                if (active.length == 0) {
+                    if (e.which == 74) {
+                        newActive = $('article').first();
+                    } else {
+                        newActive = $('article').last();
+                    }
+                } else if (e.which == 74){
+                    newActive = $($('article').get($('article').index(active)+1));
+                } else if (e.which == 75){
+                    var index = $('article').index(active);
+                    if (index == 0) return;
+                    newActive = $($('article').get(index-1));
+                }
+                if (newActive.length == 0) return;
+                active.removeClass('active');
+                newActive.addClass('active');
+				$('html, body').animate({ scrollTop: newActive.offset().top - 50 }, 100);
+            }
+            if (e.which == 13 && active.length > 0) {
+                if (active.find('h2 a').length == 0) return;
+                location.href = active.find('h2 a').attr('href');
+            }
+            if (e.which == 27) {
+                $('#keyboard-help').hide();
+            }
+        });
+        $('article').each(function(i,news) {
+            $(news).click(function() {
+                var active = $('article.active');
+                active.removeClass('active');
+                $(news).addClass('active');
+            });
+        });
+    });

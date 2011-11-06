@@ -26,9 +26,10 @@
 	%ul.unstyled
 		<% for (var i=0; i< item.length; i++) {%>
 		%li
-			%h3
-				<a href="<%= item[i].link %>"><%= item[i].title %></a>
-			<div><%= item[i].description %></div>
+			%article
+				%h3
+					<a href="<%= item[i].link %>"><%= item[i].title %></a>
+				<div><%= item[i].description %></div>
 		<% } %>
 	</script>
 	%div{ :class => "topbar" }
@@ -79,5 +80,6 @@
 				%button.btn#add_subscription Add
 				%h3 Subscriptions
 				%div{ :id => "subscription_list" }
-		%div{ :class => "content" }
+		%div#user{ :class => "content" }
 			#item_list
+		%div#visitor{ :class => "content" }
