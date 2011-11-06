@@ -2,6 +2,7 @@ var user = {
 	"username": null,
 	"user_id": null,
 	"subscriptions": [],
+	"allitems": [],
 }
 
 var UNEXPECTED_ERROR = "Oops, something went wrong";
@@ -74,6 +75,10 @@ function user_logout() {
 	$(document.body).attr('id', 'not_logged_in');
 }
 
+function refresh_items() {
+	$('#item_list').html(render('item_list', {item: user.allitems}))
+}
+
 function refresh_subscriptions() {
 	$('#subscription_list').html(render('subscription_list', user))
 }
@@ -83,6 +88,26 @@ function user_has_logged_in() {
 	if (user.user_id) {
 		window.name = '{"username":"'+encodeURIComponent(user.username)+'","user_id":'+ user.user_id +'}'
 		$(document.body).attr('id', 'logged_in');
+		$.ajax('/items/list', {
+			'data': add_user_credentials(),
+			'success': function(data, textStatus, jqXHR) {
+				try {
+					var json = $.parseJSON(data);
+					user.allitems = json
+					refresh_items();
+				} catch (e) {
+					show_message(UNEXPECTED_ERROR);
+				}
+			},
+			error: function(jqXHR, textStatus, errorThrown) {
+				try {
+					var json = $.parseJSON(jqXHR.responseText);
+					show_message(json.message)
+				} catch (e) {
+					show_message(UNEXPECTED_ERROR);
+				}
+			},
+		});
 		$.ajax('/subscription/list', {
 			'data': add_user_credentials(),
 			'success': function(data, textStatus, jqXHR) {
@@ -102,7 +127,7 @@ function user_has_logged_in() {
 					show_message(UNEXPECTED_ERROR);
 				}
 			},
-		})
+		});
 	}
 }
 

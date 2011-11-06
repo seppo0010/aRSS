@@ -154,11 +154,7 @@ class Subscription
 		}
 		subscriptions = []
 		multi.each {|s|
-			subscription = {}
-			(s.count / 2).times {|t|
-				subscription[s[t * 2]] = s[t * 2 + 1]
-			}
-			subscriptions.push(subscription)
+			subscriptions.push(hgetall_to_hash s)
 		}
 		return subscriptions
 	end

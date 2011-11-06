@@ -157,3 +157,11 @@ def auth_user(user_id, token)
 	user = $r.hgetall("user:#{user_id}")
 	$user = User.new $r, user if user.length > 0
 end
+
+def hgetall_to_hash s
+	l = {}
+	(s.count / 2).times {|t|
+		l[s[t * 2]] = s[t * 2 + 1]
+	}
+	return l
+end

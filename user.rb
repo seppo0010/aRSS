@@ -112,11 +112,15 @@ class User
 
 	def items start, stop
 		items = @r.zrevrange 'user:' + @user_id.to_s + ':items', start, stop
+		r = []
 		@r.multi {
 			items.each {|item|
 				@r.hgetall 'item:' + item.to_s
 			}
+		}.each {|i|
+			r.push(hgetall_to_hash i)
 		}
+		return r
 	end
 
 	def mark_as_read read, item_id
