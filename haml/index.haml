@@ -25,10 +25,10 @@
 	<script type="text/html" id="template_item_list">
 	%ul.unstyled
 		<% for (var i=0; i< item.length; i++) {%>
-		<li>
-		<a href="<%= item[i].link %>"><%= item[i].title %></a>
-		<div><%= item[i].description %></div>
-		</li>
+		%li
+			%h3
+				<a href="<%= item[i].link %>"><%= item[i].title %></a>
+			<div><%= item[i].description %></div>
 		<% } %>
 	</script>
 	%div{ :class => "topbar" }

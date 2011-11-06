@@ -60,6 +60,20 @@ function htmlentities(str) {
 	}
 }
 
+function html_entities_decode(str) {
+	if (typeof str === 'string')
+		return escaper.html(str).text();
+	else {
+		var obj = deepCopy(str)
+		if (typeof obj === 'array')
+			return $.map(obj, function(i, e) { return html_entities_decode(e) });
+		else
+			for (var k in obj)
+				obj[k] = html_entities_decode(obj[k]);
+		return obj;
+	}
+}
+
 function add_user_credentials(params) {
 	if (!params) params = {};
 	params.user_id = user.user_id;
@@ -76,7 +90,14 @@ function user_logout() {
 }
 
 function refresh_items() {
-	$('#item_list').html(render('item_list', {item: user.allitems}))
+	var items = deepCopy(user.allitems);
+	for (var i in items) {
+		var d = items[i].description;
+		items[i] = html_entities_decode(items[i]);
+		items[i] = htmlentities(items[i]);
+		items[i].description = d;
+	}
+	$('#item_list').html(render('item_list', {item: items}, true))
 }
 
 function refresh_subscriptions() {
@@ -89,7 +110,7 @@ function user_has_logged_in() {
 		window.name = '{"username":"'+encodeURIComponent(user.username)+'","user_id":'+ user.user_id +'}'
 		$(document.body).attr('id', 'logged_in');
 		$.ajax('/items/list', {
-			'data': add_user_credentials(),
+			'data': add_user_credentials({ start: 0, stop: 100}),
 			'success': function(data, textStatus, jqXHR) {
 				try {
 					var json = $.parseJSON(data);
