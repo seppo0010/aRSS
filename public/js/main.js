@@ -95,7 +95,7 @@ function refresh_items() {
 		var d = items[i].description;
 		items[i] = html_entities_decode(items[i]);
 		items[i] = htmlentities(items[i]);
-		items[i].description = d;
+		items[i].description = html_entities_decode(d);
 	}
 	$('#item_list').html(render('item_list', {item: items}, true))
 }
