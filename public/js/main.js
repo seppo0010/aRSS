@@ -106,7 +106,7 @@ function user_has_logged_in() {
 
 function render(template, variables, no_escape) {
 	var t = new EJS({ text: document.getElementById('template_' + template).innerHTML })
-	return t.render(noescape ? variables : htmlentities(variables));
+	return t.render(no_escape ? variables : htmlentities(variables));
 }
 
 function show_message(message, level) {
