@@ -70,6 +70,7 @@ function user_logout() {
 	user.username = null;
 	user.user_id = null;
 	user.subscriptions = [];
+	window.name = null;
 	$(document.body).attr('id', 'not_logged_in');
 }
 
@@ -80,6 +81,7 @@ function refresh_subscriptions() {
 function user_has_logged_in() {
 	$('a.menu').parent().removeClass('open');
 	if (user.user_id) {
+		window.name = '{"username":"'+encodeURIComponent(user.username)+'","user_id":'+ user.user_id +'}'
 		$(document.body).attr('id', 'logged_in');
 		$.ajax('/subscription/list', {
 			'data': add_user_credentials(),
@@ -118,6 +120,17 @@ function show_message(message, level) {
 }
 
 $(function() {
+	try {
+		if (window.name) {
+			var data = $.parseJSON(window.name)
+			if (data) {
+				user.username = decodeURIComponent(data.username)
+				user.user_id = decodeURIComponent(data.user_id)
+				user_has_logged_in();
+			}
+		}
+	} catch (e) {}
+
 	$('.login').click(function() {
 		$('#register_box').hide();
 		$('#login_box').show();
