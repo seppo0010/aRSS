@@ -6,6 +6,59 @@ var user = {
 
 var UNEXPECTED_ERROR = "Oops, something went wrong";
 
+function deepCopy(obj) {
+	if (typeof obj == 'object') {
+		if (obj instanceof Array) {
+			var l = obj.length;
+			var r = new Array(l);
+			for (var i = 0; i < l; i++) {
+				r[i] = deepCopy(obj[i]);
+			}
+			return r;
+		} else {
+			var r = {};
+			r.prototype = obj.prototype;
+			for (var k in obj) {
+				r[k] = deepCopy(obj[k]);
+			}
+			return r;
+		}
+	}
+	return obj;
+}
+
+var ARRAY_PROPS = {
+  length: 'number',
+  sort: 'function',
+  slice: 'function',
+  splice: 'function'
+};
+
+function isArray(obj) {
+	if (obj instanceof Array)
+		return true;
+	for (var k in ARRAY_PROPS) {
+		if (!(k in obj && typeof obj[k] == ARRAY_PROPS[k]))
+		return false;
+	}
+	return true;
+}
+
+var escaper = $('<div></div>')
+function htmlentities(str) {
+	if (typeof str === 'string')
+		return escaper.text(str).html();
+	else {
+		var obj = deepCopy(str)
+		if (typeof obj === 'array')
+			return $.map(obj, function(i, e) { return htmlentities(e) });
+		else
+			for (var k in obj)
+				obj[k] = htmlentities(obj[k]);
+		return obj;
+	}
+}
+
 function add_user_credentials(params) {
 	if (!params) params = {};
 	params.user_id = user.user_id;
@@ -51,9 +104,9 @@ function user_has_logged_in() {
 	}
 }
 
-function render(template, variables) {
+function render(template, variables, no_escape) {
 	var t = new EJS({ text: document.getElementById('template_' + template).innerHTML })
-	return t.render(variables);
+	return t.render(noescape ? variables : htmlentities(variables));
 }
 
 function show_message(message, level) {
