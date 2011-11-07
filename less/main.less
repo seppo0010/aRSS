@@ -64,20 +64,37 @@ body#logged_in {
 	div.content#user {
 		display: block;
 		padding-top: 20px;
-		li .active {
-			h3 a {
-				color: #0069D6;
-			}
-			div {
-				display: block;
+		li {
+			article.active {
+				background: #fff;
+				max-height: none;
+				h3 a {
+					color: #0069D6;
+				}
+				div {
+					display: block;
+				}
 			}
 		}
 		li {
-			h3 a {
-				color: #333;
-			}
-			div {
-				display: none;
+			border-top: 1px solid #000;
+			border-left: 1px solid #000;
+			article {
+				background: #ccc;
+				max-height: 30px;
+				overflow:hidden;
+				padding:0 6px;
+				h3 a {
+					color: #333;
+					text-decoration: none;
+				}
+				h3 a:hover {
+					color: #333;
+					text-decoration: none;
+				}
+				div {
+					display: none;
+				}
 			}
 		}
 	}

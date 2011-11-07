@@ -1,7 +1,9 @@
 var user = {
 	"username": null,
 	"user_id": null,
+	"unread_number": 0,
 	"subscriptions": [],
+	"active_list": 'allitems',
 	"allitems": [],
 }
 
@@ -90,7 +92,15 @@ function user_logout() {
 }
 
 function refresh_items() {
-	var items = deepCopy(user.allitems);
+	if (user.unread_number)
+		$('title').text('(' + user.unread_number + ') aRSS Reader');
+	else
+		$('title').text('aRSS Reader');
+	if (!user[user.active_list]) {
+		// TODO: handle me! send ajax here
+		return;
+	}
+	var items = deepCopy(user[user.active_list]);
 	for (var i in items) {
 		var d = items[i].description;
 		items[i] = html_entities_decode(items[i]);
@@ -98,10 +108,24 @@ function refresh_items() {
 		items[i].description = html_entities_decode(d);
 	}
 	$('#item_list').html(render('item_list', {item: items}, true))
+        $('#item_list article').each(function(i,news) {
+            $(news).click(function() {
+                var active = $('article.active');
+                active.removeClass('active');
+                $(news).addClass('active');
+            });
+        });
 }
 
 function refresh_subscriptions() {
 	$('#subscription_list').html(render('subscription_list', user))
+	$('#subscription_list li a').click(function(ev) {
+		var obj = ev.currentTarget;
+		$('#subscription_list li a.active').removeClass('active');
+		$(obj).addClass('active');
+		var href = $(obj).attr('href');
+		user.active_list = href.substr(href.lastIndexOf('/') + 1)
+	});
 }
 
 function user_has_logged_in() {
@@ -304,21 +328,18 @@ $(function() {
             if (e.which == 63) { // for some reason in keyup the '?' is returning 0, along with other keys
                 $('#keyboard-help').show();
             }
-        });
-        $(document).keyup(function(e) {
-            if ($(':focus').length > 0) return;
             var active = $('article.active');
-            if (e.which == 74 || e.which == 75) {
+            if (e.which == 106 || e.which == 107) {
                 var newActive;
                 if (active.length == 0) {
-                    if (e.which == 74) {
+                    if (e.which == 106) {
                         newActive = $('article').first();
                     } else {
                         newActive = $('article').last();
                     }
-                } else if (e.which == 74){
+                } else if (e.which == 106){
                     newActive = $($('article').get($('article').index(active)+1));
-                } else if (e.which == 75){
+                } else if (e.which == 107){
                     var index = $('article').index(active);
                     if (index == 0) return;
                     newActive = $($('article').get(index-1));
@@ -335,12 +356,5 @@ $(function() {
             if (e.which == 27) {
                 $('#keyboard-help').hide();
             }
-        });
-        $('article').each(function(i,news) {
-            $(news).click(function() {
-                var active = $('article.active');
-                active.removeClass('active');
-                $(news).addClass('active');
-            });
         });
     });

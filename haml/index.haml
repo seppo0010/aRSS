@@ -6,6 +6,7 @@
 	%script{ :type => 'text/javascript', :src => 'http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js' }
 	%script{ :type => 'text/javascript', :src => '/js/ejs_production.js' }
 	%script{ :type => 'text/javascript', :src => '/js/main.js' }
+	%title aRSS Reader
 %body#not_logged_in
 	-# haml does not allow %script with html
 	<script type="text/html" id="template_errormessage">
@@ -17,9 +18,9 @@
 	<script type="text/html" id="template_subscription_list">
 	%ul.unstyled
 		%li
-			%a{:href => "#subscription/all"} All items
+			%a{:href => "#subscription/allitems"} All items
 		<% for (var i=0; i< subscriptions.length; i++) {%>
-		%li <a href="#subscription<%= subscriptions[i].subscription_id %>"><%= subscriptions[i].title %></a>
+		%li <a href="#subscription/<%= subscriptions[i].subscription_id %>"><%= subscriptions[i].title %></a>
 		<% } %>
 	</script>
 	<script type="text/html" id="template_item_list">
