@@ -1,3 +1,15 @@
+feed_updating list <subscription id>
+CREATE bot
+READ   bot
+UPDATE bot
+DELETE bot
+
+feed_update list <subscription id>
+CREATE bot
+READ   bot
+UPDATE bot
+DELETE bot
+
 user:<username> string <user id>
 CREATE user/signup
 READ   user/login

@@ -107,8 +107,13 @@ class Subscription
 	end
 
 	def update_feed rss=nil
-		rss = SimpleRSS.parse open(@url) if !rss
-		return nil, "Invalid URL" if !rss
+		begin
+			rss = SimpleRSS.parse open(@url) if !rss
+			return nil, "Invalid URL" if !rss
+		rescue
+			return nil, "Invalid URL" if !rss
+		end
+
 		description = ''
 		begin
 			description = rss.channel.description
@@ -131,6 +136,7 @@ class Subscription
 	end
 
 	def add_items items
+		@r.lpush 'feed_update', @subscription_id
 		items.each {|item|
 			item_id = @r.hget 'item:guid', item.guid || (item.link + item.title)
 			item_id = @r.incr 'item_id' if !item_id
