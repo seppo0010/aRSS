@@ -27,10 +27,53 @@
 
 require 'app_config'
 require 'rubygems'
-require 'redis'
-require 'bot'
+require 'httpclient'
+require 'json'
 
-$r = Redis.new(:host => RedisHost, :port => RedisPort)
-while 1
-	Bot.publisher $r
+class User
+	def initialize user=nil
+		@u = user
+		@u['token'] ||= "true"
+	end
+
+	def self.signup username, password
+		r = JSON.parse HTTPClient.new.post(BaseUrl + '/user/signup', {
+			:username => username,
+			:password => password,
+		}).content
+		return true, self.new(r['user']) if r['status'] == 'ok'
+		return false, r
+	end
+
+	def self.login username, password
+		r = JSON.parse HTTPClient.new.post(BaseUrl + '/user/login', {
+			:username => username,
+			:password => password,
+		}).content
+		return true, self.new(r['user']) if r['status'] == 'ok'
+		return false, r
+	end
+
+	def subscribe url
+		JSON.parse HTTPClient.new.post(BaseUrl + '/subscription/subscribe', {
+			:subscription_url => url,
+			:user_id => @u['user_id'],
+			:token => @u['token'],
+		}).content
+	end
+
+	def unsubscribe id
+		JSON.parse HTTPClient.new.post(BaseUrl + '/subscription/unsubscribe', {
+			:subscription_id => id,
+			:user_id => @u['user_id'],
+			:token => @u['token'],
+		}).content
+	end
+
+	def list_items
+		JSON.parse HTTPClient.new.get(BaseUrl + '/items/list', {
+			:user_id => @u['user_id'],
+			:token => @u['token'],
+		}).content
+	end
 end

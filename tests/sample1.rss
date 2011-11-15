@@ -1,0 +1,13 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+<channel>
+	<title>Test</title>
+	<link>http://localhost:4567/</link>
+	<item>
+		<title>My Title</title>
+		<guid>http://localhost:4567/1</guid>
+	</item>
+	<item>
+		<title>My Title</title>
+		<guid>http://localhost:4567/2</guid>
+	</item>
+</channel>

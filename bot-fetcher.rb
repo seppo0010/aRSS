@@ -28,10 +28,10 @@
 require 'app_config'
 require 'rubygems'
 require 'redis'
-require 'subscription'
+require 'bot'
 
 $r = Redis.new(:host => RedisHost, :port => RedisPort)
 while 1
-	n = Subscription.update_scheduled $r
+	n = Bot.fetcher $r
 	sleep(n - Time.now.to_i)
 end

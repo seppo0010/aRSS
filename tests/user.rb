@@ -25,12 +25,28 @@
 # those of the authors and should not be interpreted as representing official
 # policies, either expressed or implied, of Salvatore Sanfilippo.
 
-require 'app_config'
-require 'rubygems'
-require 'redis'
-require 'bot'
+require 'tests/support/user'
 
-$r = Redis.new(:host => RedisHost, :port => RedisPort)
-while 1
-	Bot.publisher $r
+user, info = User.signup 'b', '1'
+if !user
+	p "User['status'] is not ok after sign up"
+	p info
+end
+
+user, info = User.signup 'b', '1'
+if user
+	p "User['status'] is not error after second sign up"
+	p info
+end
+
+user, info = User.login 'b', '2'
+if user
+	p "User['status'] is not error when logging in with wrong password"
+	p info
+end
+
+user, info = User.login 'b', '1'
+if !user
+	p "User['status'] is error when logging in with right password"
+	p info
 end

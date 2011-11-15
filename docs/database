@@ -87,3 +87,5 @@ CREATE bot
 READ   bot
 UPDATE bot
 DELETE 
+
+user:<user id>:subscription:<subscription id>:max_item string <item id>

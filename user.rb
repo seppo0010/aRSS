@@ -83,6 +83,14 @@ class User
 				@r.zadd 'user:' + @user_id.to_s + ':unread', timestamp.to_i, item
 			}
 		}
+		new_max_item = (items.map {|i| i.to_i}).max
+		old_max_item = @r.get('user:'+ @user_id.to_s + ':subscription:' + subscription.subscription_id.to_s + ':max_item').to_i
+		if new_max_item > old_max_item
+			old_max_item = @r.getset('user:'+ @user_id.to_s + ':subscription:' + subscription.subscription_id.to_s + ':max_item', new_max_item).to_i
+			while old_max_item > new_max_item
+				old_max_item = @r.getset('user:'+ @user_id.to_s + ':subscription:' + subscription.subscription_id.to_s + ':max_item', old_max_item).to_i
+			end
+		end
 		return subscription
 	end
 
@@ -99,7 +107,6 @@ class User
 				timestamp = @r.hget 'item:' + item.to_s, 'timestamp'
 				@r.zrem 'user:' + @user_id.to_s + ':items', item
 				@r.zrem 'user:' + @user_id.to_s + ':unread', item
-				@r.zrem 'user:' + @user_id.to_s + ':read', item
 			}
 		}
 		return subscription

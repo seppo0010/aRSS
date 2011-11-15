@@ -26,11 +26,22 @@
 # policies, either expressed or implied, of Salvatore Sanfilippo.
 
 require 'app_config'
-require 'rubygems'
-require 'redis'
 require 'bot'
+require 'tests/support/user'
+require 'fileutils'
+require 'redis'
 
-$r = Redis.new(:host => RedisHost, :port => RedisPort)
-while 1
-	Bot.publisher $r
-end
+s, user = User.signup 'a', '1'
+s, user = User.login 'a', '1' unless s
+p "Unable to login/signup" unless s
+
+FileUtils.cp 'tests/sample1.rss', 'public/sample.rss'
+user.subscribe BaseUrl + 'sample.rss'
+FileUtils.cp 'tests/sample2.rss', 'public/sample.rss'
+abort 'Wrong number of items on the user list (expecting 2, got ' + user.list_items.count.to_s + ')' unless user.list_items.count == 2
+$r = Redis.new(:host => RedisHost, :port => RedisPort) if !$r
+subscription_id = $r.hget "subscription:url", BaseUrl + 'sample.rss'
+$r.zadd "subscription:next_update", Time.now.to_i, "1"
+Bot.fetcher $r
+Bot.publisher $r, false
+abort 'Wrong number of items on the user list (expecting 3, got ' + user.list_items.count.to_s + ')' unless user.list_items.count == 3

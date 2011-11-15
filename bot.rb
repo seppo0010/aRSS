@@ -25,12 +25,44 @@
 # those of the authors and should not be interpreted as representing official
 # policies, either expressed or implied, of Salvatore Sanfilippo.
 
-require 'app_config'
-require 'rubygems'
-require 'redis'
-require 'bot'
+require File.expand_path './subscription'
+require File.expand_path 'user'
 
-$r = Redis.new(:host => RedisHost, :port => RedisPort)
-while 1
-	Bot.publisher $r
+class Bot
+	def self.fetcher r
+		Subscription.update_scheduled r
+	end
+
+	def self.publisher r, wait=true
+		if wait
+			feed = r.brpoplpush 'feed_update', 'feed_updating', 0
+		else
+			feed = r.rpoplpush 'feed_update', 'feed_updating'
+		end
+		return if !feed
+		tmp = 'tmp_' + (r.incr 'tmp').to_s
+		r.sunionstore tmp, 'subscription:' + feed + ':users'
+		while user = r.spop(tmp)
+			while 1
+				r.watch 'user:' + user.to_s + ':subscription:' + feed + ':max_item'
+				max_item = r.get('user:' + user.to_s + ':subscription:' + feed + ':max_item').to_i
+				min_score = r.zscore('subscription:' + feed + ':items', max_item).to_i - 1
+				items = r.zrangebyscore 'subscription:' + feed + ':items', min_score-1, '+inf', {:withscores => 1}
+
+				newmax_item = max_item
+				result = r.multi {
+					(items.count / 2).times {|t|
+						if (items[t * 2].to_i > max_item)
+							r.zadd 'user:' + user + ':items', items[t * 2 + 1], items[t * 2]
+							r.zadd 'user:' + user + ':unread', items[t * 2 + 1], items[t * 2]
+							newmax_item = items[t * 2].to_i if items[t * 2].to_i > newmax_item
+							# TODO: can user read an item between line zrangebyscore and here?
+						end
+					}
+				}
+				break if result != nil
+			end
+		end
+		r.lrem 'feed_updating', 0, feed
+	end
 end
