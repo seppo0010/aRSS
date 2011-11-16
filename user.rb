@@ -125,7 +125,9 @@ class User
 				@r.hgetall 'item:' + item.to_s
 			}
 		}.each {|i|
-			r.push(hgetall_to_hash i)
+			item = hgetall_to_hash i
+			item[:unread] = @r.zscore('user:'+ @user_id.to_s + ':unread', item[:item_id]) === nil
+			r.push(item)
 		}
 		return r
 	end

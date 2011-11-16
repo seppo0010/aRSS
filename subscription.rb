@@ -144,6 +144,7 @@ class Subscription
 			@r.zadd 'subscription:' + @subscription_id.to_s + ':items', date, item_id.to_s
 			@r.hset 'item:guid', item.guid || (item.link + item.title), item_id.to_s 
 			@r.hmset 'item:' + item_id.to_s,
+				"item_id", item_id,
 				"title", item.title,
 				"link", item.link,
 				"guid", item.guid,
