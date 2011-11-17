@@ -1,15 +1,4 @@
-var window = window || {};
-var document = document || {};
 
-var user = {
-	"username": null,
-	"user_id": null,
-	"unread_number": 0,
-	"subscriptions": [],
-	"subscriptions_index": {},
-	"active_list": 'allitems',
-	"allitems": []
-};
 
 var UNEXPECTED_ERROR = "Oops, something went wrong";
 
@@ -100,26 +89,6 @@ function html_entities_decode(str) {
 	}
 }
 
-function add_user_credentials(params) {
-	"use strict";
-	if (!params) {
-		params = {};
-	}
-	params.user_id = user.user_id;
-	params.token = "true";
-	return params;
-}
-
-function user_logout() {
-	"use strict";
-	user.username = null;
-	user.user_id = null;
-	user.subscriptions = [];
-	user.subscriptions_index = {};
-	window.name = null;
-	$(document.body).attr('id', 'not_logged_in');
-}
-
 function render(template, variables, no_escape) {
 	"use strict";
 	var t = document.getElementById('template_' + template).innerHTML;
@@ -135,8 +104,158 @@ function show_message(message, level) {
 	setTimeout(function () { html.fadeOut('fast', function () { html.remove(); }); }, 4000);
 }
 
-function refresh_items() {
+var User = Backbone.Model.extend({
+	attributes: {
+		"username": null,
+		"user_id": 0
+	}
+});
+
+window.CurrentUser = User.extend({
+	attributes: {
+		"unread_number": 0,
+		"subscriptions": [],
+		"subscriptions_index": {},
+		"active_list": "allitems",
+		"allitems": [],
+	},
+	"signParams": function (params) {
+		"use strict";
+		if (!params) {
+			params = {};
+		}
+		params.user_id = this.get('user_id');
+		params.token = "true";
+		return params;
+	},
+	"initialize": function () {
+		"use strict";
+		this.bind('change:user_id', this.didLogin, this);
+	},
+	"logout": function () {
+		"use strict";
+		window.name = null;
+		window.CurrentUser.instance = null;
+	},
+	"fetchUnread": function () {
+		$.ajax('/items/list', {
+			'data': this.signParams({ start: 0, stop: 100}),
+			'success': function (data, textStatus, jqXHR) {
+				try {
+					var json = $.parseJSON(data);
+					CurrentUser.getInstance().set({ allitems: new ItemList(json) });
+				} catch (e) {
+					show_message(UNEXPECTED_ERROR);
+				}
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				try {
+					var json = $.parseJSON(jqXHR.responseText);
+					show_message(json.message);
+				} catch (e) {
+					show_message(UNEXPECTED_ERROR);
+				}
+			}
+		});
+	},
+	"fetchSubscriptions": function () {
+		"use strict";
+		var user = this;
+		$.ajax('/subscription/list', {
+			'data': this.signParams(),
+			'success': function (data, textStatus, jqXHR) {
+				try {
+					var s, json = $.parseJSON(data);
+					var user = CurrentUser.getInstance();
+					for (s in user.subscriptions) {
+						if (user.subscriptions.hasOwnProperty(s)) {
+							user.subscriptions_index[user.subscriptions[s].subscription_id] = s;
+						}
+					}
+					user.set({subscriptions : new SubscriptionList(json) });
+				} catch (e) {
+					show_message(UNEXPECTED_ERROR);
+				}
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				try {
+					var json = $.parseJSON(jqXHR.responseText);
+					show_message(json.message);
+				} catch (e) {
+					show_message(UNEXPECTED_ERROR);
+				}
+			}
+		});
+	},
+	isLoggedIn: false,
+	"didLogin": function () {
+		"use strict";
+		if (this.get('user_id')) {
+			if (!this.isLoggedIn) {
+				window.name = '{"username":"' + encodeURIComponent(this.get('username')) + '","user_id":' +  this.get('user_id')  + '}';
+				this.fetchUnread();
+				this.fetchSubscriptions();
+			}
+		} else {
+			if (this.isLoggedIn) {
+				this.logout();
+			}
+		}
+	}
+});
+window.CurrentUser.instance = null;
+window.CurrentUser.getInstance = function () {
 	"use strict";
+	if (CurrentUser.instance == null) {
+		CurrentUser.instance = new window.CurrentUser();
+		new window.CurrentUserView({ model: CurrentUser.instance })
+	}
+	return CurrentUser.instance;
+};
+
+window.CurrentUserView = Backbone.View.extend({
+	initialize: function () {
+		"use strict";
+		this.model.bind('destroy', function () {
+			$(document.body).attr('id', 'not_logged_in');
+		});
+		this.model.bind('change', this.render, this);
+	},
+	render: function () {
+		"use strict";
+		if (this.model.get('user_id') === 0) {
+			$(document.body).attr('id', 'not_logged_in');
+		} else {
+			$('a.menu').parent().removeClass('open');
+			$(document.body).attr('id', 'logged_in');
+		}
+	}
+});
+
+window.Subscription = Backbone.Model.extend({
+	attributes: {
+		"items": null
+	},
+	initialize: function () {
+		"use strict";
+		this.items = new ItemList();
+	}
+});
+
+window.SubscriptionList = Backbone.Collection.extend({
+	model: Subscription
+});
+
+window.Item = Backbone.Model.extend({
+});
+
+var ItemList = Backbone.Collection.extend({
+	model: Item
+});
+
+window.Item.refresh = function () {
+	"use strict";
+	var user = CurrentUser.getInstance();
 	if (user.unread_number) {
 		$('title').text('(' + user.unread_number + ') aRSS Reader');
 	} else {
@@ -155,91 +274,44 @@ function refresh_items() {
 			items[i].description = html_entities_decode(d);
 		}
 	}
-	$('#item_list').html(render('item_list', {item: items, user: user}, true))
-        $('#item_list article').each(function(i,news) {
-            $(news).click(function() {
-                var active = $('article.active');
-                active.removeClass('active');
-                $(news).addClass('active');
-            });
-        });
-}
-
-function refresh_subscriptions() {
-	"use strict";
-	$('#subscription_list').html(render('subscription_list', user));
-	$('#subscription_list li a').click(function (ev) {
-		var href, obj = ev.currentTarget;
-		$('#subscription_list li a.active').removeClass('active');
-		$(obj).addClass('active');
-		href = $(obj).attr('href');
-		user.active_list = href.substr(href.lastIndexOf('/') + 1);
-	});
-}
-
-function user_has_logged_in() {
-	"use strict";
-	$('a.menu').parent().removeClass('open');
-	if (user.user_id) {
-		window.name = '{"username":"' + encodeURIComponent(user.username) + '","user_id":' +  user.user_id  + '}';
-		$(document.body).attr('id', 'logged_in');
-		$.ajax('/items/list', {
-			'data': add_user_credentials({ start: 0, stop: 100}),
-			'success': function (data, textStatus, jqXHR) {
-				try {
-					var json = $.parseJSON(data);
-					user.allitems = json;
-					refresh_items();
-				} catch (e) {
-					show_message(UNEXPECTED_ERROR);
-				}
-			},
-			error: function (jqXHR, textStatus, errorThrown) {
-				try {
-					var json = $.parseJSON(jqXHR.responseText);
-					show_message(json.message);
-				} catch (e) {
-					show_message(UNEXPECTED_ERROR);
-				}
-			}
+	$('#item_list').html(render('item_list', {item: items, user: user}, true));
+	$('#item_list article').each(function (i, news) {
+		$(news).click(function () {
+			var active = $('article.active');
+			active.removeClass('active');
+			$(news).addClass('active');
 		});
-		$.ajax('/subscription/list', {
-			'data': add_user_credentials(),
-			'success': function (data, textStatus, jqXHR) {
-				try {
-					var s, json = $.parseJSON(data);
-					user.subscriptions = json;
-					for (s in user.subscriptions) {
-						if (user.subscriptions.hasOwnProperty(s)) {
-							user.subscriptions_index[user.subscriptions[s].subscription_id] = s;
-						}
-					}
-					refresh_subscriptions();
-				} catch (e) {
-					show_message(UNEXPECTED_ERROR);
-				}
-			},
-			error: function (jqXHR, textStatus, errorThrown) {
-				try {
-					var json = $.parseJSON(jqXHR.responseText);
-					show_message(json.message);
-				} catch (e) {
-					show_message(UNEXPECTED_ERROR);
-				}
-			}
+	});
+};
+
+window.Subscription = Backbone.Model.extend({
+});
+
+window.SubscriptionListView = Backbone.View.extend({
+	render: function () {
+		"use strict";
+		$('#subscription_list').html(render('subscription_list', CurrentUser.getInstance()));
+		$('#subscription_list li a').click(function (ev) {
+			var href, obj = ev.currentTarget;
+			$('#subscription_list li a.active').removeClass('active');
+			$(obj).addClass('active');
+			href = $(obj).attr('href');
+			CurrentUser.getInstance().active_list = href.substr(href.lastIndexOf('/') + 1);
 		});
 	}
-}
+});
 
 $(function () {
 	"use strict";
+	var user = CurrentUser.getInstance();
 	try {
 		if (window.name) {
 			var data = $.parseJSON(window.name);
 			if (data) {
-				user.username = decodeURIComponent(data.username);
-				user.user_id = decodeURIComponent(data.user_id);
-				user_has_logged_in();
+				user.set({
+					username: decodeURIComponent(data.username),
+					user_id: decodeURIComponent(data.user_id)
+				});
 			}
 		}
 	} catch (e) {}
@@ -275,11 +347,12 @@ $(function () {
 				$('#register_password').val('');
 				$('#confirm_register_password').val('');
 				var json = $.parseJSON(data);
-				user.username = json.user.username;
-				user.user_id = json.user.user_id;
-				if (user.user_id) {
-					user_has_logged_in();
-				} else {
+				user.set({
+					username: json.user.username,
+					user_id: json.user.user_id
+				});
+
+				if (!user.get('user_id')) {
 					show_message(UNEXPECTED_ERROR);
 				}
 			},
@@ -309,9 +382,10 @@ $(function () {
 				$('#register_password').val('');
 				$('#confirm_register_password').val('');
 				var json = $.parseJSON(data);
-				user.username = json.user.username;
-				user.user_id = json.user.user_id;
-				user_has_logged_in();
+				user.set({
+					username: json.user.username,
+					user_id: json.user.user_id
+				});
 			},
 			error: function (jqXHR, textStatus, errorThrown) {
 				try {
@@ -339,7 +413,6 @@ $(function () {
 				var json = $.parseJSON(data);
 				if (json) {
 					user.subscriptions.push(json);
-					refresh_subscriptions();
 				}
 				$('#add_subscription_box').hide();
 			},
@@ -363,7 +436,7 @@ $(function () {
 		$('#add_subscription_box').hide();
 		e.preventDefault();
 	});
-	$('#logout_box a').click(user_logout);
+	$('#logout_box a').click(user.logout);
 });
 
 $(function () {
