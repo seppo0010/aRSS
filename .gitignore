@@ -1,5 +1,7 @@
 public/html/*.html
 public/css/*.css
 public/js/bootstrap*.js
+public/js/backbone.js
+public/js/underscore-min.js
 .*.swp
 .DS_Store
