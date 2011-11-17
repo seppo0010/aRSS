@@ -3,6 +3,7 @@ var user = {
 	"user_id": null,
 	"unread_number": 0,
 	"subscriptions": [],
+	"subscriptions_index": {},
 	"active_list": 'allitems',
 	"allitems": [],
 }
@@ -87,6 +88,7 @@ function user_logout() {
 	user.username = null;
 	user.user_id = null;
 	user.subscriptions = [];
+	user.subscriptions_index = {};
 	window.name = null;
 	$(document.body).attr('id', 'not_logged_in');
 }
@@ -107,7 +109,7 @@ function refresh_items() {
 		items[i] = htmlentities(items[i]);
 		items[i].description = html_entities_decode(d);
 	}
-	$('#item_list').html(render('item_list', {item: items}, true))
+	$('#item_list').html(render('item_list', {item: items, user: user}, true))
         $('#item_list article').each(function(i,news) {
             $(news).click(function() {
                 var active = $('article.active');
@@ -159,6 +161,9 @@ function user_has_logged_in() {
 				try {
 					var json = $.parseJSON(data);
 					user.subscriptions = json
+					for (var s in user.subscriptions) {
+						user.subscriptions_index[user.subscriptions[s].subscription_id] = s;
+					}
 					refresh_subscriptions();
 				} catch (e) {
 					show_message(UNEXPECTED_ERROR);

@@ -145,6 +145,7 @@ class Subscription
 			@r.hset 'item:guid', item.guid || (item.link + item.title), item_id.to_s 
 			@r.hmset 'item:' + item_id.to_s,
 				"item_id", item_id,
+				"subscription_id", @subscription_id,
 				"title", item.title,
 				"link", item.link,
 				"guid", item.guid,
