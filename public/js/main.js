@@ -134,7 +134,6 @@ window.CurrentUser = User.extend({
 	"logout": function () {
 		"use strict";
 		window.name = null;
-		window.CurrentUser.instance = null;
 		this.set({user_id: 0, username: null});
 	},
 	"fetchUnread": function () {
@@ -158,10 +157,8 @@ window.CurrentUser = User.extend({
 					$.each(json, function (i, s) {
 						subscriptions_index[s.subscription_id] = i;
 					});
-					user.set({
-						subscriptions : new SubscriptionList(json),
-						subscriptions_index: subscriptions_index
-					});
+					user.set({subscriptions_index: subscriptions_index}); // Using two steps, since updating subscriptions will redraw and needs the index set
+					user.set({subscriptions : new SubscriptionList(json) });
 				} catch (e) {
 					show_message(UNEXPECTED_ERROR);
 				}
@@ -274,10 +271,14 @@ window.ItemList = Backbone.Collection.extend({
 window.ItemListView = Backbone.View.extend({
 	initialize: function () {
 		CurrentUser.getInstance().bind('change:allitems', this.render);
+		CurrentUser.getInstance().bind('change:subscriptions', this.render);
 	},
 	render: function () {
 			"use strict";
 			var user = CurrentUser.getInstance();
+			if (!user.get('subscriptions')) {
+				return;
+			}
 			if (user.unread_number) {
 				$('title').text('(' + user.unread_number + ') aRSS Reader');
 			} else {
@@ -419,11 +420,11 @@ $(function () {
 		$('#new_subscription_url').attr('disabled', 'disabled');
 		$.ajax('/subscription/subscribe', {
 			'type': 'post',
-			'data': add_user_credentials({subscription_url: $('#new_subscription_url').val() }),
+			'data': CurrentUser.getInstance().signParams({subscription_url: $('#new_subscription_url').val() }),
 			'success': function (data, textStatus, jqXHR) {
 				var json = $.parseJSON(data);
 				if (json) {
-					user.subscriptions.push(json);
+					user.get('subscriptions').add(new Subscription(json));
 				}
 				$('#add_subscription_box').hide();
 			},
