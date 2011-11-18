@@ -116,7 +116,8 @@ window.CurrentUser = User.extend({
 		"unread_number": 0,
 		"subscriptions": [],
 		"subscriptions_index": {},
-		"allitems": null
+		"items": {},
+		"active_subscription": "allitems"
 	},
 	"signParams": function (params) {
 		"use strict";
@@ -136,13 +137,20 @@ window.CurrentUser = User.extend({
 		window.name = null;
 		this.set({user_id: 0, username: null});
 	},
-	"fetchUnread": function () {
-		var allitems = this.get('allitems');
-		if (!allitems) {
-			allitems = new ItemList();
-			this.set({ allitems: allitems });
+	"fetchItems": function () {
+		"use strict";
+		var section = 'allitems';
+		if (!this.get('items')) {
+			this.set({items: {}});
 		}
-		allitems.fetchList();
+		var items = this.get('items')[section];
+
+		if (!items) {
+			items = new ItemList();
+			items.section = section;
+			this.get('items')[section] = items;
+		}
+		items.fetchList();
 	},
 	"fetchSubscriptions": function () {
 		"use strict";
@@ -179,8 +187,9 @@ window.CurrentUser = User.extend({
 		if (this.get('user_id')) {
 			if (!this.isLoggedIn) {
 				window.name = '{"username":"' + encodeURIComponent(this.get('username')) + '","user_id":' +  this.get('user_id')  + '}';
-				this.fetchUnread();
+				this.set({active_subscription: 'allitems' });
 				this.fetchSubscriptions();
+				this.fetchItems(this.get('active_subscription'));
 			}
 		} else {
 			if (this.isLoggedIn) {
@@ -258,6 +267,7 @@ window.Subscription = Backbone.Model.extend({
 	initialize: function () {
 		"use strict";
 		this.items = new ItemList();
+		this.items.section = this.get('subscription_id');
 	}
 });
 
@@ -270,8 +280,16 @@ window.Item = Backbone.Model.extend({
 
 window.ItemList = Backbone.Collection.extend({
 	model: Item,
+	section: null,
+	initialize: function () {
+		"use strict";
+	},
 	fetchList: function (list) {
+		"use strict";
 		list = list || {};
+		if (this.section) {
+			list.subscription_id = this.section;
+		}
 		list.start = 0;
 		list.stop = 100;
 		$.ajax('/items/list', {
@@ -280,7 +298,7 @@ window.ItemList = Backbone.Collection.extend({
 				try {
 					var json = $.parseJSON(data);
 					this.reset(json);
-					CurrentUser.getInstance().trigger('change:allitems');
+					CurrentUser.getInstance().trigger('change:items');
 				} catch (e) {
 					show_message(UNEXPECTED_ERROR);
 				}
@@ -299,7 +317,7 @@ window.ItemList = Backbone.Collection.extend({
 
 window.ItemListView = Backbone.View.extend({
 	initialize: function () {
-		CurrentUser.getInstance().bind('change:allitems', this.render);
+		CurrentUser.getInstance().bind('change:items', this.render);
 		CurrentUser.getInstance().bind('change:subscriptions', this.render);
 	},
 	render: function () {
@@ -313,7 +331,7 @@ window.ItemListView = Backbone.View.extend({
 		} else {
 			$('title').text('aRSS Reader');
 		}
-		items = user.get('allitems');
+		items = user.get('items')[user.get('active_subscription')];
 		$('#item_list').html(render('item_list', {items: items, user: user}, true));
 		$('#item_list article').each(function (i, news) {
 			$(news).click(function () {
@@ -478,6 +496,16 @@ $(function () {
 		e.preventDefault();
 	});
 	$('#logout_box a').click(_.bind(user.logout, user));
+});
+
+$(function () {
+	var Workspace = Backbone.Router.extend({
+		  routes: {
+			"subscription/:subscription": "subscription",
+		},
+		"subscription": function (id) {
+		}
+	});
 });
 
 $(function () {

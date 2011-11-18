@@ -150,7 +150,8 @@ class Subscription
 				"link", item.link,
 				"guid", item.guid,
 				"description", item.description,
-				"comments", item.comments,
+				"comments", item.comments
+			@r.hsetnx 'item:' + item_id.to_s,
 				"timestamp", date.to_s
 			}
 	end
