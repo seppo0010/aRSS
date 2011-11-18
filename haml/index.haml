@@ -14,28 +14,28 @@
 	%div#notification{ :class => "alert-message error fade in", "data-alert" => 'alert' }
 		%a.close{:href => "#"}x
 		%p
-			<%= message %>
+			<%= htmlentities(message) %>
 	</script>
 	<script type="text/html" id="template_subscription_list">
 	%ul.unstyled
 		%li
 			%a{:href => "#subscription/allitems"} All items
-		<% for (var i=0; i< subscriptions.length; i++) {%>
-		%li <a href="#subscription/<%= subscriptions[i].subscription_id %>"><%= subscriptions[i].title %></a>
-		<% } %>
+		<% subscriptions.each(function (s) { %>
+		%li <a href="#subscription/<%= s.escape('subscription_id') %>"><%= s.escape('title') %></a>
+		<% }); %>
 	</script>
 	<script type="text/html" id="template_item_list">
 	%ul.unstyled
-		<% for (var i=0; i< item.length; i++) {%>
+		<% items.each(function (i) { %>
 		%li
 			%article
 				%div.heading
 					%div.feed
-						<%= user.subscriptions[user.subscriptions_index[item[i].subscription_id]].title %>
+						<%= user.get('subscriptions').at(user.get('subscriptions_index')[i.get('subscription_id')]).escape('title') %>
 					%div.title
-						<%= item[i].title %>
+						<%= i.escape('title') %>
 					%div.date
-						<% var date = new Date(item[i].timestamp * 1000) %>
+						<% var date = new Date(i.get('timestamp') * 1000) %>
 						<% var now = new Date() %>
 						<% if ('' + date.getFullYear() + date.getMonth() + date.getDate() == '' + now.getFullYear() + now.getMonth() + now.getDate()) {%>
 						<%= date.getHours() + ':' + (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) %>
@@ -43,10 +43,10 @@
 						<%= date.getFullYear() + '-' + (date.getMonth()+1 < 10 ? '0' + date.getMonth()+1 : date.getMonth()+1) + '-' + (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) %>
 						<% } %>
 				%h3
-					<a href="<%= item[i].link %>"><%= item[i].title %></a>
+					<a href="<%= i.escape('link') %>"><%= i.escape('title') %></a>
 				%div.description
-					<%= item[i].description %>
-		<% } %>
+					<%= html_entities_decode(i.get('description')) %>
+		<% }) %>
 	</script>
 	%div{ :class => "topbar" }
 		%div{ :class => "topbar-inner" }

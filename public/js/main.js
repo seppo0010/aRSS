@@ -89,10 +89,10 @@ function html_entities_decode(str) {
 	}
 }
 
-function render(template, variables, no_escape) {
+function render(template, variables) {
 	"use strict";
 	var t = document.getElementById('template_' + template).innerHTML;
-	return _.template(t, no_escape ? variables : htmlentities(variables));
+	return _.template(t, variables);
 }
 
 function show_message(message, level) {
@@ -116,8 +116,7 @@ window.CurrentUser = User.extend({
 		"unread_number": 0,
 		"subscriptions": [],
 		"subscriptions_index": {},
-		"active_list": "allitems",
-		"allitems": [],
+		"allitems": null
 	},
 	"signParams": function (params) {
 		"use strict";
@@ -136,27 +135,15 @@ window.CurrentUser = User.extend({
 		"use strict";
 		window.name = null;
 		window.CurrentUser.instance = null;
+		this.set({user_id: 0, username: null});
 	},
 	"fetchUnread": function () {
-		$.ajax('/items/list', {
-			'data': this.signParams({ start: 0, stop: 100}),
-			'success': function (data, textStatus, jqXHR) {
-				try {
-					var json = $.parseJSON(data);
-					CurrentUser.getInstance().set({ allitems: new ItemList(json) });
-				} catch (e) {
-					show_message(UNEXPECTED_ERROR);
-				}
-			},
-			error: function (jqXHR, textStatus, errorThrown) {
-				try {
-					var json = $.parseJSON(jqXHR.responseText);
-					show_message(json.message);
-				} catch (e) {
-					show_message(UNEXPECTED_ERROR);
-				}
-			}
-		});
+		var allitems = this.get('allitems');
+		if (!allitems) {
+			allitems = new ItemList();
+			this.set({ allitems: allitems });
+		}
+		allitems.fetchList();
 	},
 	"fetchSubscriptions": function () {
 		"use strict";
@@ -167,12 +154,14 @@ window.CurrentUser = User.extend({
 				try {
 					var s, json = $.parseJSON(data);
 					var user = CurrentUser.getInstance();
-					for (s in user.subscriptions) {
-						if (user.subscriptions.hasOwnProperty(s)) {
-							user.subscriptions_index[user.subscriptions[s].subscription_id] = s;
-						}
-					}
-					user.set({subscriptions : new SubscriptionList(json) });
+					var subscriptions_index = {};
+					$.each(json, function (i, s) {
+						subscriptions_index[s.subscription_id] = i;
+					});
+					user.set({
+						subscriptions : new SubscriptionList(json),
+						subscriptions_index: subscriptions_index
+					});
 				} catch (e) {
 					show_message(UNEXPECTED_ERROR);
 				}
@@ -214,12 +203,16 @@ window.CurrentUser.getInstance = function () {
 };
 
 window.CurrentUserView = Backbone.View.extend({
+	subscriptions: null,
+	items: null,
 	initialize: function () {
 		"use strict";
 		this.model.bind('destroy', function () {
 			$(document.body).attr('id', 'not_logged_in');
 		});
 		this.model.bind('change', this.render, this);
+		this.subscriptions = new SubscriptionListView();
+		this.items = new ItemListView ();
 	},
 	render: function () {
 		"use strict";
@@ -249,54 +242,72 @@ window.SubscriptionList = Backbone.Collection.extend({
 window.Item = Backbone.Model.extend({
 });
 
-var ItemList = Backbone.Collection.extend({
-	model: Item
+window.ItemList = Backbone.Collection.extend({
+	model: Item,
+	fetchList: function (list) {
+		list = list || {};
+		list.start = 0;
+		list.stop = 100;
+		$.ajax('/items/list', {
+			'data': CurrentUser.getInstance().signParams(list),
+			'success': _.bind(function (data, textStatus, jqXHR) {
+				try {
+					var json = $.parseJSON(data);
+					this.reset(json);
+					CurrentUser.getInstance().trigger('change:allitems');
+				} catch (e) {
+					show_message(UNEXPECTED_ERROR);
+				}
+			}, this),
+			error: function (jqXHR, textStatus, errorThrown) {
+				try {
+					var json = $.parseJSON(jqXHR.responseText);
+					show_message(json.message);
+				} catch (e) {
+					show_message(UNEXPECTED_ERROR);
+				}
+			}
+		});
+	}
 });
 
-window.Item.refresh = function () {
-	"use strict";
-	var user = CurrentUser.getInstance();
-	if (user.unread_number) {
-		$('title').text('(' + user.unread_number + ') aRSS Reader');
-	} else {
-		$('title').text('aRSS Reader');
+window.ItemListView = Backbone.View.extend({
+	initialize: function () {
+		CurrentUser.getInstance().bind('change:allitems', this.render);
+	},
+	render: function () {
+			"use strict";
+			var user = CurrentUser.getInstance();
+			if (user.unread_number) {
+				$('title').text('(' + user.unread_number + ') aRSS Reader');
+			} else {
+				$('title').text('aRSS Reader');
+			}
+			var i, d, items = user.get('allitems');
+			$('#item_list').html(render('item_list', {items: items, user: user}, true));
+			$('#item_list article').each(function (i, news) {
+				$(news).click(function () {
+					var active = $('article.active');
+					active.removeClass('active');
+					$(news).addClass('active');
+				});
+			});
 	}
-	if (!user[user.active_list]) {
-		// TODO: handle me! send ajax here
-		return;
-	}
-	var i, d, items = deepCopy(user[user.active_list]);
-	for (i in items) {
-		if (items.hasOwnProperty(i)) {
-			d = items[i].description;
-			items[i] = html_entities_decode(items[i]);
-			items[i] = htmlentities(items[i]);
-			items[i].description = html_entities_decode(d);
-		}
-	}
-	$('#item_list').html(render('item_list', {item: items, user: user}, true));
-	$('#item_list article').each(function (i, news) {
-		$(news).click(function () {
-			var active = $('article.active');
-			active.removeClass('active');
-			$(news).addClass('active');
-		});
-	});
-};
-
-window.Subscription = Backbone.Model.extend({
 });
 
 window.SubscriptionListView = Backbone.View.extend({
+	initialize: function () {
+		CurrentUser.getInstance().bind('change:subscriptions', this.render);
+	},
 	render: function () {
 		"use strict";
-		$('#subscription_list').html(render('subscription_list', CurrentUser.getInstance()));
+		var s = CurrentUser.getInstance().get('subscriptions');
+		$('#subscription_list').html(render('subscription_list', { subscriptions: s } ));
 		$('#subscription_list li a').click(function (ev) {
 			var href, obj = ev.currentTarget;
 			$('#subscription_list li a.active').removeClass('active');
 			$(obj).addClass('active');
 			href = $(obj).attr('href');
-			CurrentUser.getInstance().active_list = href.substr(href.lastIndexOf('/') + 1);
 		});
 	}
 });
@@ -436,7 +447,7 @@ $(function () {
 		$('#add_subscription_box').hide();
 		e.preventDefault();
 	});
-	$('#logout_box a').click(user.logout);
+	$('#logout_box a').click(_.bind(user.logout, user));
 });
 
 $(function () {
