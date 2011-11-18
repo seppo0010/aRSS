@@ -187,6 +187,33 @@ window.CurrentUser = User.extend({
 				this.logout();
 			}
 		}
+	},
+	"subscribe": function (url, callback) {
+		"use strict";
+		$.ajax('/subscription/subscribe', {
+			'type': 'post',
+			'data': this.signParams({subscription_url: $('#new_subscription_url').val() }),
+			'success': (function (data, textStatus, jqXHR) {
+				try {
+					var json = $.parseJSON(data);
+					if (json) {
+						this.get('subscriptions').add(new Subscription(json));
+					}
+					this.trigger('change:subscriptions');
+					callback(true);
+				} catch (e) {
+					callback(false, UNEXPECTED_ERROR);
+				}
+			}).bind(this),
+			error: function (jqXHR, textStatus, errorThrown) {
+				try {
+					var json = $.parseJSON(jqXHR.responseText);
+					callback(false, json.message);
+				} catch (e) {
+					callback(false, UNEXPECTED_ERROR);
+				}
+			}
+		});
 	}
 });
 window.CurrentUser.instance = null;
@@ -215,6 +242,8 @@ window.CurrentUserView = Backbone.View.extend({
 		"use strict";
 		if (this.model.get('user_id') === 0) {
 			$(document.body).attr('id', 'not_logged_in');
+			$('#item_list').html('');
+			$('#subscriptions').html('');
 		} else {
 			$('a.menu').parent().removeClass('open');
 			$(document.body).attr('id', 'logged_in');
@@ -274,35 +303,44 @@ window.ItemListView = Backbone.View.extend({
 		CurrentUser.getInstance().bind('change:subscriptions', this.render);
 	},
 	render: function () {
-			"use strict";
-			var user = CurrentUser.getInstance();
-			if (!user.get('subscriptions')) {
-				return;
-			}
-			if (user.unread_number) {
-				$('title').text('(' + user.unread_number + ') aRSS Reader');
-			} else {
-				$('title').text('aRSS Reader');
-			}
-			var i, d, items = user.get('allitems');
-			$('#item_list').html(render('item_list', {items: items, user: user}, true));
-			$('#item_list article').each(function (i, news) {
-				$(news).click(function () {
-					var active = $('article.active');
-					active.removeClass('active');
-					$(news).addClass('active');
-				});
+		"use strict";
+		var i, d, items, user = CurrentUser.getInstance();
+		if (!user.get('subscriptions')) {
+			return;
+		}
+		if (user.unread_number) {
+			$('title').text('(' + user.unread_number + ') aRSS Reader');
+		} else {
+			$('title').text('aRSS Reader');
+		}
+		items = user.get('allitems');
+		$('#item_list').html(render('item_list', {items: items, user: user}, true));
+		$('#item_list article').each(function (i, news) {
+			$(news).click(function () {
+				var active = $('article.active');
+				active.removeClass('active');
+				$(news).addClass('active');
 			});
+		});
 	}
 });
 
 window.SubscriptionListView = Backbone.View.extend({
 	initialize: function () {
+		CurrentUser.getInstance().unbind('change:subscriptions', this.render);
 		CurrentUser.getInstance().bind('change:subscriptions', this.render);
+		if (CurrentUser.getInstance().get('subscriptions')) {
+			CurrentUser.getInstance().get('subscriptions').bind('add', this.render);
+		}
 	},
 	render: function () {
 		"use strict";
-		var s = CurrentUser.getInstance().get('subscriptions');
+
+		var user = CurrentUser.getInstance()
+		var s = user.get('subscriptions');
+		s.unbind('add', this.render);
+		s.bind('add', this.render); // in case it wasn't binded
+
 		$('#subscription_list').html(render('subscription_list', { subscriptions: s } ));
 		$('#subscription_list li a').click(function (ev) {
 			var href, obj = ev.currentTarget;
@@ -418,27 +456,18 @@ $(function () {
 	});
 	$('#confirm_subscription').click(function () {
 		$('#new_subscription_url').attr('disabled', 'disabled');
-		$.ajax('/subscription/subscribe', {
-			'type': 'post',
-			'data': CurrentUser.getInstance().signParams({subscription_url: $('#new_subscription_url').val() }),
-			'success': function (data, textStatus, jqXHR) {
-				var json = $.parseJSON(data);
-				if (json) {
-					user.get('subscriptions').add(new Subscription(json));
-				}
+		CurrentUser.getInstance().subscribe($('#new_subscription_url').val(), function(success, response) {
+			if (success) {
 				$('#add_subscription_box').hide();
-			},
-			error: function (jqXHR, textStatus, errorThrown) {
+			} else {
 				try {
 					var json = $.parseJSON(jqXHR.responseText);
 					show_message(json.message);
 				} catch (e) {
 					show_message(UNEXPECTED_ERROR);
 				}
-			},
-			complete: function () {
-				$('#new_subscription_url').attr('disabled', false);
 			}
+			$('#new_subscription_url').attr('disabled', false);
 		});
 	});
 	$('#cancel_subscription').click(function () {
