@@ -81,11 +81,9 @@ class User
 				@r.hget 'item:' + item.to_s, 'timestamp'
 			}
 		}
-		i = 0
 		@r.multi {
-			items.each { |item|
+			items.each_with_index { |item, i|
 				timestamp = timestamps[i]
-				i += 1
 				@r.zadd 'user:' + @user_id.to_s + ':items', timestamp.to_i, item
 				@r.zadd 'user:' + @user_id.to_s + ':unread', timestamp.to_i, item
 			}
