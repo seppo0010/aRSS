@@ -122,8 +122,12 @@ class User
 		Subscription.list @r, @r.smembers('user:' + @user_id.to_s + ':subscriptions')
 	end
 
-	def items start, stop
-		items = @r.zrevrange 'user:' + @user_id.to_s + ':items', start, stop
+	def items start, stop, subscription_id
+		if subscription_id == 'allitems'
+			items = @r.zrevrange 'user:' + @user_id.to_s + ':items', start, stop
+		else
+			items = @r.zrevrange 'subscription:' + subscription_id.to_s + ':items', start, stop
+		end
 		r = []
 		@r.multi {
 			items.each {|item|

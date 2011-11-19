@@ -266,8 +266,9 @@ window.Subscription = Backbone.Model.extend({
 	},
 	initialize: function () {
 		"use strict";
-		this.items = new ItemList();
-		this.items.section = this.get('subscription_id');
+		var items = new ItemList();
+		items.section = this.get('subscription_id');
+		this.set({items: items});
 	}
 });
 
@@ -281,11 +282,16 @@ window.Item = Backbone.Model.extend({
 window.ItemList = Backbone.Collection.extend({
 	model: Item,
 	section: null,
+	fetching: false,
 	initialize: function () {
 		"use strict";
 	},
 	fetchList: function (list) {
 		"use strict";
+		if (this.fetching) {
+			return;
+		}
+		this.fetching = true;
 		list = list || {};
 		if (this.section) {
 			list.subscription_id = this.section;
@@ -310,7 +316,10 @@ window.ItemList = Backbone.Collection.extend({
 				} catch (e) {
 					show_message(UNEXPECTED_ERROR);
 				}
-			}
+			},
+			complete: (function () {
+				this.fetching = true;
+			}).bind(this)
 		});
 	}
 });
@@ -319,10 +328,11 @@ window.ItemListView = Backbone.View.extend({
 	initialize: function () {
 		CurrentUser.getInstance().bind('change:items', this.render);
 		CurrentUser.getInstance().bind('change:subscriptions', this.render);
+		CurrentUser.getInstance().bind('change:active_subscription', this.render);
 	},
 	render: function () {
 		"use strict";
-		var i, d, items, user = CurrentUser.getInstance();
+		var subscription, i, d, items, user = CurrentUser.getInstance();
 		if (!user.get('subscriptions')) {
 			return;
 		}
@@ -332,6 +342,20 @@ window.ItemListView = Backbone.View.extend({
 			$('title').text('aRSS Reader');
 		}
 		items = user.get('items')[user.get('active_subscription')];
+		if (!items) {
+			subscription = user.get('subscriptions').at(user.get('subscriptions_index')[user.get('active_subscription')]);
+			if (!subscription) {
+				return;
+			}
+			items = subscription.get('items');
+			if (!items) {
+				return;
+			}
+			if (items.length === 0) {
+				items.fetchList();
+				return;
+			}
+		}
 		$('#item_list').html(render('item_list', {items: items, user: user}, true));
 		$('#item_list article').each(function (i, news) {
 			$(news).click(function () {
@@ -354,17 +378,16 @@ window.SubscriptionListView = Backbone.View.extend({
 	render: function () {
 		"use strict";
 
-		var user = CurrentUser.getInstance()
-		var s = user.get('subscriptions');
+		var s, user = CurrentUser.getInstance();
+		s = user.get('subscriptions');
 		s.unbind('add', this.render);
 		s.bind('add', this.render); // in case it wasn't binded
 
-		$('#subscription_list').html(render('subscription_list', { subscriptions: s } ));
+		$('#subscription_list').html(render('subscription_list', { subscriptions: s }));
 		$('#subscription_list li a').click(function (ev) {
 			var href, obj = ev.currentTarget;
 			$('#subscription_list li a.active').removeClass('active');
 			$(obj).addClass('active');
-			href = $(obj).attr('href');
 		});
 	}
 });
@@ -504,8 +527,11 @@ $(function () {
 			"subscription/:subscription": "subscription",
 		},
 		"subscription": function (id) {
+			CurrentUser.getInstance().set({active_subscription: id});
 		}
 	});
+	new Workspace();
+	Backbone.history.start();
 });
 
 $(function () {
