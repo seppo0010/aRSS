@@ -324,6 +324,24 @@ window.ItemList = Backbone.Collection.extend({
 	}
 });
 
+window.ItemView = Backbone.View.extend({
+	"tagName": "li",
+	"events": {
+		'click article': "open"
+	},
+	"open": function () {
+		"use strict";
+		var active = $('article.active');
+		active.removeClass('active');
+		$(this.el).find('article').addClass('active');
+	},
+	"render": function () {
+		"use strict";
+		$(this.el).html(render('item', { item: this.model, user: CurrentUser.getInstance() }));
+		return this;
+	}
+});
+
 window.ItemListView = Backbone.View.extend({
 	initialize: function () {
 		CurrentUser.getInstance().bind('change:items', this.render);
@@ -356,14 +374,11 @@ window.ItemListView = Backbone.View.extend({
 				return;
 			}
 		}
-		$('#item_list').html(render('item_list', {items: items, user: user}, true));
-		$('#item_list article').each(function (i, news) {
-			$(news).click(function () {
-				var active = $('article.active');
-				active.removeClass('active');
-				$(news).addClass('active');
-			});
+		var ul = $('<ul class="unstyled"></ul>');
+		items.each(function (item, i) {
+			ul.append((new ItemView({ model: item })).render().el);
 		});
+		$('#item_list').html(ul);
 	}
 });
 

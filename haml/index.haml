@@ -24,30 +24,26 @@
 		%li <a href="#subscription/<%= s.escape('subscription_id') %>"><%= s.escape('title') %></a>
 		<% }); %>
 	</script>
-	<script type="text/html" id="template_item_list">
-	%ul.unstyled
-		<% items.each(function (i) { %>
-		<% var subscription = user.get('subscriptions').at(user.get('subscriptions_index')[i.get('subscription_id')]) %>
-		%li
-			%article
-				%div.heading
-					%div.feed
-						<%= (subscription && subscription.escape) ? subscription.escape('title') : '' %>
-					%div.title
-						<%= i.escape('title') %>
-					%div.date
-						<% var date = new Date(i.get('timestamp') * 1000) %>
-						<% var now = new Date() %>
-						<% if ('' + date.getFullYear() + date.getMonth() + date.getDate() == '' + now.getFullYear() + now.getMonth() + now.getDate()) {%>
-						<%= date.getHours() + ':' + (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) %>
-						<% } else { %>
-						<%= date.getFullYear() + '-' + (date.getMonth()+1 < 10 ? '0' + date.getMonth()+1 : date.getMonth()+1) + '-' + (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) %>
-						<% } %>
-				%h3
-					<a href="<%= i.escape('link') %>"><%= i.escape('title') %></a>
-				%div.description
-					<%= html_entities_decode(i.get('description')) %>
-		<% }) %>
+	<script type="text/html" id="template_item">
+	<% var subscription = user.get('subscriptions').at(user.get('subscriptions_index')[item.get('subscription_id')]) %>
+	%article
+		%div.heading
+			%div.feed
+				<%= (subscription && subscription.escape) ? subscription.escape('title') : '' %>
+			%div.title
+				<%= item.escape('title') %>
+			%div.date
+				<% var date = new Date(item.get('timestamp') * 1000) %>
+				<% var now = new Date() %>
+				<% if ('' + date.getFullYear() + date.getMonth() + date.getDate() == '' + now.getFullYear() + now.getMonth() + now.getDate()) {%>
+				<%= date.getHours() + ':' + (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) %>
+				<% } else { %>
+				<%= date.getFullYear() + '-' + (date.getMonth()+1 < 10 ? '0' + date.getMonth()+1 : date.getMonth()+1) + '-' + (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) %>
+				<% } %>
+		%h3
+			<a href="<%= item.escape('link') %>"><%= item.escape('title') %></a>
+		%div.description
+			<%= html_entities_decode(item.get('description')) %>
 	</script>
 	%div{ :class => "topbar" }
 		%div{ :class => "topbar-inner" }
