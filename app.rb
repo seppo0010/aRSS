@@ -140,7 +140,7 @@ post '/items/mark' do
 	if (!params[:item_id])
 		halt(401, output({ :status => "error", :message => "Missing or invalid item_id"}))
 	end
-	output($user.mark_as_read(params[:read], params[:item_id]))
+	output($user.mark(params[:items_id].split(','), params[:mark_type]))
 end
 
 def required_params *required

@@ -141,11 +141,15 @@ class User
 		return r
 	end
 
-	def mark_as_read read, item_id
-		timestamp = @r.hget 'item:' + item_id.to_s, 'timestamp'
-		@r.multi {
-			@r.zrem 'user:' + @user_id.to_s + ':' + (read ? 'un' : '') + 'read', item_id.to_s
-			@r.zadd 'user:' + @user_id.to_s + ':' + (read ? '' : 'un') + 'read', timestamp, item_id.to_s
+	def mark items_id, type
+		items_id.each {|item_id|
+			timestamp = @r.hget 'item:' + item_id.to_s, 'timestamp'
+			if (type == 'unread' || type == 'read')
+				@r.multi {
+					@r.zrem 'user:' + @user_id.to_s + ':' + (type =='read' ? 'un' : '') + 'read', item_id.to_s
+					@r.zadd 'user:' + @user_id.to_s + ':' + (type =='read' ? '' : 'un') + 'read', timestamp, item_id.to_s
+				}
+			end
 		}
 	end
 end
