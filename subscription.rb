@@ -140,7 +140,8 @@ class Subscription
 		items.each {|item|
 			item_id = @r.hget 'item:guid', item.guid || (item.link + item.title)
 			item_id = @r.incr 'item_id' if !item_id
-			date = (@r.zscore 'subscription:' + @subscription_id.to_s + ':items', item_id.to_s || item.pubDate || Time.now).to_i
+			date = @r.zscore('subscription:' + @subscription_id.to_s + ':items', item_id.to_s).to_i
+			date = (item.pubDate || Time.now).to_i if date == 0
 			@r.zadd 'subscription:' + @subscription_id.to_s + ':items', date, item_id.to_s
 			@r.hset 'item:guid', item.guid || (item.link + item.title), item_id.to_s 
 			@r.hmset 'item:' + item_id.to_s,
