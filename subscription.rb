@@ -31,6 +31,8 @@ require 'net/http'
 require 'simple-rss'
 require 'open-uri'
 require 'hpricot'
+require 'app_config'
+require 'log'
 
 class Subscription
 	attr_accessor :subscription_id
@@ -60,6 +62,7 @@ class Subscription
 		subscription_id = r.hget 'subscription:url', url
 		return self.new r, r.hgetall('subscription:' + subscription_id.to_s) if subscription_id
 
+		Log.message LogDebug, "Fetching feed from " + url
 		begin
 			uri = URI(url)
 			response = Net::HTTP.get_response uri
@@ -67,10 +70,12 @@ class Subscription
 				when Net::HTTPSuccess     then
 				when Net::HTTPRedirection then return self.get_by_url(r, response['location'], max_redirects - 1)
 			else
+				Log.message LogDebug, "Fetch Failed: Invalid URL" + url
 				return nil, "Invalid URL"
 			end
 			body = response.body
 			rss = SimpleRSS.parse body
+			Log.message LogDebug, "Fetch Failed: Invalid URL " + url
 			return nil, "Invalid URL" if !rss
 
 			subcription_id = r.incr 'subscription_id'
@@ -81,9 +86,10 @@ class Subscription
 
 			subscription = self.new r, { "subscription_id" => subcription_id, "url" => url }
 			subscription.update_feed rss
+			Log.message LogDebug, "Fetch succeded for subscription " + subcription_id.to_s + " (" + url + ")"
 			return subscription
 		rescue Exception => e
-            p e
+			Log.message LogDebug, "Looking for alternate feed in " + url
 			begin
 				doc = Hpricot.parse(body)
 				(doc/:link).each do |link|
@@ -98,9 +104,10 @@ class Subscription
 						return self.get_by_url r, _uri.to_s, max_redirects - 1 if _uri != uri
 					end
 				end
+				Log.message LogDebug, "Feed not found in " + url
 				return nil, "Invalid URL"
 			rescue Exception => e
-				p e
+				Log.message LogDebug, "Feed not found in " + url
 				return nil, "Invalid URL"
 			end
 		end

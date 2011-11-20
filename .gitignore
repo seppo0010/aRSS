@@ -5,3 +5,4 @@ public/js/backbone.js
 public/js/underscore-min.js
 .*.swp
 .DS_Store
+log.out
