@@ -68,11 +68,13 @@ body#logged_in {
 			border-top: 1px solid #000;
 			border-left: 1px solid #000;
 			article {
-				background: #ccc;
 				max-height: 64px;
 				overflow:hidden;
-				padding:0 6px;
+				div.heading, h3, div.description {
+					padding:0 6px;
+				}
 				div.heading, div.heading div {
+					background: #ccc;
 					display: block;
 				}
 
@@ -81,7 +83,6 @@ body#logged_in {
 				}
 			}
 			article.active {
-				background: #fff;
 				max-height: none;
 				h3 a {
 					color: #0069D6;
