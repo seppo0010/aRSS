@@ -249,7 +249,7 @@ window.CurrentUserView = Backbone.View.extend({
 		});
 		this.model.bind('change', this.render, this);
 		this.model.bind('change:view_items', function () {
-			this.items.render(true);
+			this.items.reload();
 		}, this);
 		this.subscriptions = new SubscriptionListView();
 		this.items = new ItemListView ();
@@ -320,6 +320,7 @@ window.ItemList = Backbone.Collection.extend({
 	section: null,
 	unread: false,
 	fetching: false,
+	initialized: false,
 	initialize: function () {
 		"use strict";
 	},
@@ -328,6 +329,7 @@ window.ItemList = Backbone.Collection.extend({
 		if (this.fetching) {
 			return;
 		}
+		this.initialized = true;
 		this.fetching = true;
 		list = list || {};
 		if (this.section) {
@@ -399,10 +401,29 @@ window.ItemView.DOMMap = {};
 window.ItemListView = Backbone.View.extend({
 	initialize: function () {
 		CurrentUser.getInstance().bind('change:items', this.render);
-		CurrentUser.getInstance().bind('change:subscriptions', this.render);
+		CurrentUser.getInstance().bind('change:subscriptions', this.reload);
 		CurrentUser.getInstance().bind('change:active_subscription', this.render);
 	},
-	render: function (force) {
+	reload: function () {
+		var subscription, items, user = CurrentUser.getInstance();
+		if (user.get('active_subscription') === 'allitems') {
+			items = user.get('items')['allitems'];
+		} else {
+			if (!user.get('subscriptions')) {
+				return;
+			}
+			subscription = user.get('subscriptions').at(user.get('subscriptions_index')[user.get('active_subscription')]);
+			if (!subscription) {
+				return;
+			}
+			items = subscription.get('items');
+			if (!items) {
+				return;
+			}
+		}
+		items.fetchList();
+	},
+	render: function () {
 		"use strict";
 		var subscription, i, d, items, user = CurrentUser.getInstance();
 		if (!user.get('subscriptions')) {
@@ -413,8 +434,9 @@ window.ItemListView = Backbone.View.extend({
 		} else {
 			$('title').text('aRSS Reader');
 		}
-		items = user.get('items')[user.get('active_subscription')];
-		if (!items || force) {
+		if (user.get('active_subscription') === 'allitems') {
+			items = user.get('items')['allitems'];
+		} else {
 			subscription = user.get('subscriptions').at(user.get('subscriptions_index')[user.get('active_subscription')]);
 			if (!subscription) {
 				return;
@@ -423,10 +445,10 @@ window.ItemListView = Backbone.View.extend({
 			if (!items) {
 				return;
 			}
-			if (force || items.length === 0) {
-				items.fetchList();
-				return;
-			}
+		}
+		if (!items.initialized) {
+			items.fetchList();
+			return;
 		}
 		var ul = $('<ul class="unstyled"></ul>');
 		items.each(function (item, i) {
@@ -616,7 +638,7 @@ $(function () {
 			$(document.body).toggleClass('fullscreen');
 		}
 		if (e.which === 114) {
-			CurrentUserView.getInstance().items.render(true);
+			CurrentUserView.getInstance().items.reload();
 		}
 		if (e.which === 106 || e.which === 107) {
 			if (active.length === 0) {
