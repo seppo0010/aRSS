@@ -342,6 +342,7 @@ window.ItemView = Backbone.View.extend({
 		var active = $('article.active');
 		active.removeClass('active');
 		$(this.el).find('article').addClass('active');
+		$('html, body').animate({ scrollTop: $(this.el).offset().top - 50 }, 100);
 	},
 	"render": function () {
 		"use strict";
@@ -586,7 +587,6 @@ $(function () {
 			var element = ItemView.DOMMap[newActive.attr('id')];
 			if (!element) return;
 			element.open();
-			$('html, body').animate({ scrollTop: newActive.offset().top - 50 }, 100);
 		}
 		if (e.which === 13 && active.length > 0) {
 			if (active.find('h2 a').length === 0) { return; }
