@@ -329,6 +329,14 @@ window.ItemView = Backbone.View.extend({
 	"events": {
 		'click article': "open"
 	},
+	"initialize": function () {
+		"use strict";
+		ItemView.DOMMap["ItemView" + this.model.get('item_id')] = this;
+	},
+	"destroy": function () {
+		"use strict";
+		delete ItemView.DOMMap["ItemView" + this.model.get('item_id')]
+	},
 	"open": function () {
 		"use strict";
 		var active = $('article.active');
@@ -341,6 +349,7 @@ window.ItemView = Backbone.View.extend({
 		return this;
 	}
 });
+window.ItemView.DOMMap = {};
 
 window.ItemListView = Backbone.View.extend({
 	initialize: function () {
@@ -574,8 +583,9 @@ $(function () {
 			if (newActive.length === 0) {
 				return;
 			}
-			active.removeClass('active');
-			newActive.addClass('active');
+			var element = ItemView.DOMMap[newActive.attr('id')];
+			if (!element) return;
+			element.open();
 			$('html, body').animate({ scrollTop: newActive.offset().top - 50 }, 100);
 		}
 		if (e.which === 13 && active.length > 0) {
