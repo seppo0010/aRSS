@@ -4,6 +4,7 @@ js:
 	cp lib/bootstrap/js/*.js public/js/
 	cp lib/underscode/underscore-min.js public/js/
 	cp lib/backbone/backbone.js public/js/
+	cat js/* > public/js/main.js
 
 css:
 	mkdir -p public/css
