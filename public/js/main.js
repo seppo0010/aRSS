@@ -607,6 +607,7 @@ $(function () {
 	"use strict";
 	$(document).keypress(function (e) {
 		if ($(':focus').length > 0) { return; }
+		if (e.metaKey || e.ctrlKey || e.altKey) return;
 		if (e.which === 63) { // for some reason in keyup the '?' is returning 0, along with other keys
 			$('#keyboard-help').show();
 		}
