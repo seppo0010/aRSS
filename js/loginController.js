@@ -52,6 +52,7 @@ $(function () {
 				if (!user.get('user_id')) {
 					show_message(UNEXPECTED_ERROR);
 				}
+				$(document.body).focus();
 			},
 			error: function (jqXHR, textStatus, errorThrown) {
 				try {
@@ -83,6 +84,7 @@ $(function () {
 					username: json.user.username,
 					user_id: json.user.user_id
 				});
+				$(document.body).focus();
 			},
 			error: function (jqXHR, textStatus, errorThrown) {
 				try {

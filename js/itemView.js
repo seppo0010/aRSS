@@ -87,6 +87,7 @@ window.ItemListView = Backbone.View.extend({
 			ul.append((new ItemView({ model: item })).render().el);
 		});
 		$('#item_list').html(ul);
+		$('html, body').animate({ scrollTop: $(this.el).offset().top }, 100);
 	}
 });
 
