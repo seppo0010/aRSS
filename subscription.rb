@@ -33,6 +33,7 @@ require 'open-uri'
 require 'hpricot'
 require 'app_config'
 require 'log'
+require 'htmlentities'
 
 class Subscription
 	attr_accessor :subscription_id
@@ -126,13 +127,13 @@ class Subscription
 			description = rss.channel.description
 		rescue
 		end
+		@link = HTMLEntities.new.decode rss.channel.link
+		@title = HTMLEntities.new.decode rss.channel.title
+		@description = HTMLEntities.new.decode description
 		@r.hmset 'subscription:' + @subscription_id.to_s,
-			"link", rss.channel.link,
-			"title", rss.channel.title,
-			"description", description
-		@link = rss.channel.link
-		@title = rss.channel.title
-		@description = description
+			"link", @link,
+			"title", @title,
+			"description", @description
 		add_items rss.items
         oldest = @r.zrange 'subscription:' + @subscription_id.to_s + ':items', 0, 0, { :withscores => true }
         timestamp = oldest.last.to_i
@@ -154,11 +155,11 @@ class Subscription
 			@r.hmset 'item:' + item_id.to_s,
 				"item_id", item_id,
 				"subscription_id", @subscription_id,
-				"title", item.title,
-				"link", item.link,
-				"guid", item.guid,
-				"description", item.description,
-				"comments", item.comments,
+				"title", HTMLEntities.new.decode(item.title),
+				"link", HTMLEntities.new.decode(item.link),
+				"guid", HTMLEntities.new.decode(item.guid),
+				"description", HTMLEntities.new.decode(item.description),
+				"comments", HTMLEntities.new.decode(item.comments),
 				"timestamp", date.to_s
 			}
 	end

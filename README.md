@@ -7,7 +7,7 @@ Requirements
 ------------
 
 To run aRSS the following Gems are required: sinatra, redis, json,
-simple-rss and hpricot.
+htmlentities, simple-rss and hpricot.
 To prepare the project to run haml, uglify and lessc are required.
 Haml can be installed as a gem. uglifyjs and less are npm packages.
 Redis server is required. By defaulf aRSS connects to Redis on

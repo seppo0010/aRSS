@@ -4,3 +4,4 @@ gem 'redis'
 gem "json"
 gem "simple-rss"
 gem "hpricot"
+gem "htmlentities"
