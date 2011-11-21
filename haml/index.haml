@@ -35,7 +35,7 @@
 		%div.date
 			<% var date = new Date(item.get('timestamp') * 1000) %>
 			<% var now = new Date() %>
-			<% if ('' + date.getFullYear() + date.getMonth() + date.getDate() == '' + now.getFullYear() + now.getMonth() + now.getDate()) {%>
+			<% if (now.getTime() - date.getTime() < 24 * 60 * 60 * 1000) {%>
 			<%= date.getHours() + ':' + (date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()) %>
 			<% } else { %>
 			<%= date.getFullYear() + '-' + (date.getMonth()+1 < 10 ? '0' + date.getMonth()+1 : date.getMonth()+1) + '-' + (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) %>
