@@ -137,10 +137,10 @@ post '/items/mark' do
 	if (!$user)
 		halt(401, output({ :status => "error", :message => "Missing or invalid token"}))
 	end
-	if (!params[:item_id])
+	if (!params[:items_id])
 		halt(401, output({ :status => "error", :message => "Missing or invalid item_id"}))
 	end
-	output($user.mark(params[:items_id].split(','), params[:mark_type]))
+	output($user.mark(params[:items_id].split(','), params[:type]))
 end
 
 def required_params *required

@@ -277,6 +277,19 @@ window.SubscriptionList = Backbone.Collection.extend({
 });
 
 window.Item = Backbone.Model.extend({
+	"mark": function (type) {
+		"use strict";
+		$.ajax('/items/mark', {
+			'type': 'post',
+			'data': CurrentUser.getInstance().signParams({
+				items_id: this.get('item_id'),
+				type: type
+			}),
+			complete: _.bind(function () {
+				this.trigger('change');
+			}, this)
+		});
+	}
 });
 
 window.ItemList = Backbone.Collection.extend({
@@ -343,6 +356,9 @@ window.ItemView = Backbone.View.extend({
 		active.removeClass('active');
 		$(this.el).find('article').addClass('active');
 		$('html, body').animate({ scrollTop: $(this.el).offset().top - 50 }, 100);
+		 $(this.el).find('article').removeClass('unread');
+		 $(this.el).find('article').addClass('read');
+		 this.model.mark('read');
 	},
 	"render": function () {
 		"use strict";
