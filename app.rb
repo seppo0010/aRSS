@@ -130,7 +130,7 @@ get '/items/list' do
 	if (!$user)
 		halt(401, output({ :status => "error", :message => "Missing or invalid token"}))
 	end
-	output($user.items params[:start].to_i, params[:stop] || 20, params[:subscription_id])
+	output($user.items params[:start].to_i, params[:stop] || 20, params[:subscription_id], { :unread => params[:unread] })
 end
 
 post '/items/mark' do

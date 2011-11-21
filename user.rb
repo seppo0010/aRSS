@@ -122,7 +122,7 @@ class User
 		Subscription.list @r, @r.smembers('user:' + @user_id.to_s + ':subscriptions')
 	end
 
-	def items start, stop, subscription_id
+	def items start, stop, subscription_id, extra
 		if subscription_id == 'allitems'
 			items = @r.zrevrange 'user:' + @user_id.to_s + ':items', start, stop
 		else
@@ -136,7 +136,9 @@ class User
 		}.each {|i|
 			item = hgetall_to_hash i
 			item[:unread] = @r.zscore('user:'+ @user_id.to_s + ':unread', item["item_id"]) != nil
-			r.push(item)
+			if (!extra[:unread] || item[:unread])
+				r.push(item)
+			end
 		}
 		return r
 	end

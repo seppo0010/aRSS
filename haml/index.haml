@@ -50,6 +50,9 @@
 		%div{ :class => "topbar-inner" }
 			%div{ :class => "container" }
 				%a{ :class => "brand", :href => '/' } aRSS Reader
+				%div{ :class => "options" }
+					%a#viewUnread{ :class => "btn small primary", :href => 'javascript:void(null);' } View Unread
+					%a#viewAll{ :class => "btn small", :href => 'javascript:void(null);' } View All
 				%ul{:class => "nav secondary-nav"}
 					%li{:class => "menu", :id => "logout_box"}
 						%a{ :href => "javascript:void(null);" } Logout

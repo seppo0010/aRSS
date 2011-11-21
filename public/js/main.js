@@ -111,13 +111,16 @@ var User = Backbone.Model.extend({
 	}
 });
 
+window.ViewItemsAll = 1;
+window.ViewItemsUnread = 2;
 window.CurrentUser = User.extend({
 	attributes: {
 		"unread_number": 0,
 		"subscriptions": [],
 		"subscriptions_index": {},
 		"items": {},
-		"active_subscription": "allitems"
+		"active_subscription": "allitems",
+		"view_items": window.ViewItemsUnread
 	},
 	"signParams": function (params) {
 		"use strict";
@@ -130,6 +133,7 @@ window.CurrentUser = User.extend({
 	},
 	"initialize": function () {
 		"use strict";
+		this.set({ "view_items": window.ViewItemsUnread });
 		this.bind('change:user_id', this.didLogin, this);
 	},
 	"logout": function () {
@@ -230,7 +234,7 @@ window.CurrentUser.getInstance = function () {
 	"use strict";
 	if (CurrentUser.instance == null) {
 		CurrentUser.instance = new window.CurrentUser();
-		new window.CurrentUserView({ model: CurrentUser.instance })
+		new window.CurrentUserView({ model: CurrentUser.instance });
 	}
 	return CurrentUser.instance;
 };
@@ -244,8 +248,22 @@ window.CurrentUserView = Backbone.View.extend({
 			$(document.body).attr('id', 'not_logged_in');
 		});
 		this.model.bind('change', this.render, this);
+		this.model.bind('change:view_items', function () {
+			this.items.render(true);
+		}, this);
 		this.subscriptions = new SubscriptionListView();
 		this.items = new ItemListView ();
+		$('div.options a').click(function (ev) {
+			$('div.options a').removeClass('primary');
+			var e = $(ev.currentTarget);
+			$(e).addClass('primary');
+			if (e.attr('id') === 'viewAll') {
+				CurrentUser.getInstance().set({'view_items': window.ViewItemsAll });
+			}
+			if (e.attr('id') === 'viewUnread') {
+				CurrentUser.getInstance().set({'view_items': window.ViewItemsUnread });
+			}
+		});
 	},
 	render: function () {
 		"use strict";
@@ -295,6 +313,7 @@ window.Item = Backbone.Model.extend({
 window.ItemList = Backbone.Collection.extend({
 	model: Item,
 	section: null,
+	unread: false,
 	fetching: false,
 	initialize: function () {
 		"use strict";
@@ -311,6 +330,9 @@ window.ItemList = Backbone.Collection.extend({
 		}
 		list.start = 0;
 		list.stop = 100;
+		if (CurrentUser.getInstance().get('view_items') === window.ViewItemsUnread) {
+			list.unread = 1;
+		}
 		$.ajax('/items/list', {
 			'data': CurrentUser.getInstance().signParams(list),
 			'success': _.bind(function (data, textStatus, jqXHR) {
@@ -331,7 +353,7 @@ window.ItemList = Backbone.Collection.extend({
 				}
 			},
 			complete: (function () {
-				this.fetching = true;
+				this.fetching = false;
 			}).bind(this)
 		});
 	}
@@ -374,7 +396,7 @@ window.ItemListView = Backbone.View.extend({
 		CurrentUser.getInstance().bind('change:subscriptions', this.render);
 		CurrentUser.getInstance().bind('change:active_subscription', this.render);
 	},
-	render: function () {
+	render: function (force) {
 		"use strict";
 		var subscription, i, d, items, user = CurrentUser.getInstance();
 		if (!user.get('subscriptions')) {
@@ -386,7 +408,7 @@ window.ItemListView = Backbone.View.extend({
 			$('title').text('aRSS Reader');
 		}
 		items = user.get('items')[user.get('active_subscription')];
-		if (!items) {
+		if (!items || force) {
 			subscription = user.get('subscriptions').at(user.get('subscriptions_index')[user.get('active_subscription')]);
 			if (!subscription) {
 				return;
@@ -395,7 +417,7 @@ window.ItemListView = Backbone.View.extend({
 			if (!items) {
 				return;
 			}
-			if (items.length === 0) {
+			if (force || items.length === 0) {
 				items.fetchList();
 				return;
 			}
