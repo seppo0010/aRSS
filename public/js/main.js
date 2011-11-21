@@ -234,7 +234,7 @@ window.CurrentUser.getInstance = function () {
 	"use strict";
 	if (CurrentUser.instance == null) {
 		CurrentUser.instance = new window.CurrentUser();
-		new window.CurrentUserView({ model: CurrentUser.instance });
+		window.CurrentUserView.instance = new window.CurrentUserView({ model: CurrentUser.instance });
 	}
 	return CurrentUser.instance;
 };
@@ -277,6 +277,11 @@ window.CurrentUserView = Backbone.View.extend({
 		}
 	}
 });
+window.CurrentUserView.instance = null;
+window.CurrentUserView.getInstance = function () {
+	"use strict";
+	return window.CurrentUserView.instance;
+};
 
 window.Subscription = Backbone.Model.extend({
 	attributes: {
@@ -377,10 +382,11 @@ window.ItemView = Backbone.View.extend({
 		var active = $('article.active');
 		active.removeClass('active');
 		$(this.el).find('article').addClass('active');
-		$('html, body').animate({ scrollTop: $(this.el).offset().top - 50 }, 100);
-		 $(this.el).find('article').removeClass('unread');
-		 $(this.el).find('article').addClass('read');
-		 this.model.mark('read');
+		var offset = $(document.body).hasClass('fullscreen') ? 10 : 50;
+		$('html, body').animate({ scrollTop: $(this.el).offset().top - offset }, 100);
+		$(this.el).find('article').removeClass('unread');
+		$(this.el).find('article').addClass('read');
+		this.model.mark('read');
 	},
 	"render": function () {
 		"use strict";
@@ -605,6 +611,12 @@ $(function () {
 			$('#keyboard-help').show();
 		}
 		var index, newActive, active = $('article.active');
+		if (e.which === 102) {
+			$(document.body).toggleClass('fullscreen');
+		}
+		if (e.which === 114) {
+			CurrentUserView.getInstance().items.render(true);
+		}
 		if (e.which === 106 || e.which === 107) {
 			if (active.length === 0) {
 				if (e.which === 106) {

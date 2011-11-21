@@ -125,6 +125,27 @@ body#logged_in {
 body {
 	padding-top: 40px;
 }
+
+body#logged_in.fullscreen {
+	width: 100%;
+	padding-top: 4px;
+	div.topbar {
+		display: none;
+	}
+	div.container-fluid {
+		width: 100%;
+		padding-top: 0;
+		div.sidebar {
+			display: none;
+		}
+		div.content#user {
+			width: 100%;
+			padding: 0;
+			margin-left: 0;
+		}
+	}
+}
+
 #subscriptions {
 	position: relative;
 	div#add_subscription_box {
