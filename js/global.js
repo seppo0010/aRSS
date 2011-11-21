@@ -102,3 +102,9 @@ function show_message(message, level) {
 	setTimeout(function () { html.fadeOut('fast', function () { html.remove(); }); }, 4000);
 }
 
+
+function autolink(text) {
+	"use strict";
+	var re = /((http|https|ftp):\/\/[\w?=&.\/\-;#~%\-]+(?![\w\s?&.\/;#~%"=\-]*>))/g;
+	return (text.replace(re, '<a href="$1">$1</a>'));
+}

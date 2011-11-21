@@ -43,7 +43,7 @@
 	%h3
 		<a href="<%= item.escape('link') %>"><%= item.escape('title') %></a>
 	%div.description
-		<%= html_entities_decode(item.get('description')) %>
+		<%= autolink(item.get('description')) %>
 	</article>
 	</script>
 	%div{ :class => "topbar" }
